@@ -3,6 +3,7 @@ Sistema de información para la gestión de residuos.
 
 ##Estructura del proyecto  
 
+```  
 EcoSoftwareSpringboot/  
 ├── .idea/                  # Configuración de IntelliJ  
 ├── .mvn/                   # Wrapper de Maven  
@@ -32,7 +33,7 @@ EcoSoftwareSpringboot/
 ├── pom.xml                  # Archivo de dependencias y build de Maven  
 ├── .gitignore               # Ignorar archivos para Git  
 └── README.md  
-
+```  
 ##Base de datos MySql  
 
 Nombre: ecosoftware_bdSpBt  
