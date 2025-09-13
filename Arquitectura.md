@@ -34,8 +34,9 @@
 ---
 **Controller  -->  Service (interface)  -->  Implement (lógica)  -->  Repository  -->  Entity (BD)
 DTO (opcional) circula entre Controller y Service
-Exception captura errores en cualquier capa
-**
+Exception captura errores en cualquier capa**  
+
+---
 📁Controller/   
 Propósito: Maneja las peticiones HTTP y decide qué hacer con ellas.    
 Qué contiene: Clases Java anotadas con @RestController o @Controller.   
