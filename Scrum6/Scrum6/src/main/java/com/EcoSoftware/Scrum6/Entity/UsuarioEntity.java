@@ -12,8 +12,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "usuarios")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 
 public class UsuarioEntity {
     @Id
@@ -21,8 +20,9 @@ public class UsuarioEntity {
     @Column
     private Long idUsuario;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "rol_id", referencedColumnName = "idRol")
+    @ManyToOne
+    @JoinColumn(name = "rol_id", nullable = false)
+
     @NotNull(message = "El rol es obligatorio")
     private RolEntity rol;
 

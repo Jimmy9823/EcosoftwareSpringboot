@@ -3,6 +3,13 @@ package com.EcoSoftware.Scrum6.DTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 
 public class RolDTO {
     private Long idRol;

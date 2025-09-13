@@ -6,11 +6,12 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Table(name= "roles")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
+
 
 public class RolEntity {
     @Id
@@ -18,8 +19,8 @@ public class RolEntity {
     @Column
     private Long idRol;
 
-    @OneToOne(mappedBy = "rol")
-    private UsuarioEntity usuario;
+    @OneToMany(mappedBy = "rol")
+    private List<UsuarioEntity> usuarios;
 
     @Column(nullable = false)
     @Size(min = 2, max = 50, message = "El nombre debe tener minimo 2 y maximo 50 caracteres")

@@ -6,8 +6,9 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class UsuarioConfig {
+
     @Bean
-    public ModelMapper modelMapper(){
-        return modelMapper();
+    public ModelMapper modelMapper() {
+        return new ModelMapper();
     }
 }
