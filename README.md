@@ -1,11 +1,11 @@
 # EcoSoftware
 Sistema de información para la gestión de residuos.
 
-##Estructura del proyecto
+##Estructura del proyecto  
 
-EcoSoftwareSpringboot/
-├── .idea/                  # Configuración de IntelliJ
-├── .mvn/                   # Wrapper de Maven
+EcoSoftwareSpringboot/  
+├── .idea/                  # Configuración de IntelliJ  
+├── .mvn/                   # Wrapper de Maven  
 │   └── wrapper/
 ├── src/
 │   ├── main/
