@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 
-public class Rol {
+public class RolEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
     private Long idRol;
 
     @OneToOne(mappedBy = "rol")
-    private Usuario usuario;
+    private UsuarioEntity usuario;
 
     @Column(nullable = false)
     @Size(min = 2, max = 50, message = "El nombre debe tener minimo 2 y maximo 50 caracteres")

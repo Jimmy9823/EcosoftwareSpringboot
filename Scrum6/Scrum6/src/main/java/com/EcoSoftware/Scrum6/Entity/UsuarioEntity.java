@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 
-public class Usuario {
+public class UsuarioEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -24,7 +24,7 @@ public class Usuario {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "rol_id", referencedColumnName = "idRol")
     @NotNull(message = "El rol es obligatorio")
-    private Rol rol;
+    private RolEntity rol;
 
     @Column(nullable = false)
     @NotBlank(message = "El nombre es obligatorio")
