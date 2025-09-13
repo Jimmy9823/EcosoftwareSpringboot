@@ -1,7 +1,7 @@
 # EcoSoftware
 Sistema de información para la gestión de residuos.
 
-##Estructura del proyecto  
+## Estructura del proyecto  
 
 ```  
 EcoSoftwareSpringboot/  
@@ -37,7 +37,7 @@ EcoSoftwareSpringboot/
 
 ---
 
-##Base de datos  
+## Base de datos  
 **MySql**  
 
 Nombre: ecosoftware_bdSpBt  
