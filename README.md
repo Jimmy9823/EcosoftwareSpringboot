@@ -33,9 +33,17 @@ EcoSoftwareSpringboot/
 ├── pom.xml                  # Archivo de dependencias y build de Maven  
 ├── .gitignore               # Ignorar archivos para Git  
 └── README.md  
-```  
-##Base de datos MySql  
+```
+
+---
+
+##Base de datos  
+**MySql**  
 
 Nombre: ecosoftware_bdSpBt  
 Usuario: root  
 contraseña:   
+  
+**Postgres**  
+Aun no esta configurada
+
