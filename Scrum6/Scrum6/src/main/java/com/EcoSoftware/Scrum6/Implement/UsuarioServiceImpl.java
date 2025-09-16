@@ -10,7 +10,9 @@ import com.EcoSoftware.Scrum6.Service.UsuarioService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -33,7 +35,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     public UsuarioDTO obtenerUsuarioPorId(Long idUsuario) {
         UsuarioEntity usuarioEntity = usuarioRepository.findById(idUsuario).
-                orElseThrow(()->new RuntimeException("Persona no encontrada con ID: " + idUsuario));
+                orElseThrow(() -> new RuntimeException("Persona no encontrada con ID: " + idUsuario));
         return convertirADTO(usuarioEntity);
     }
 
@@ -59,14 +61,14 @@ public class UsuarioServiceImpl implements UsuarioService {
         UsuarioEntity usuarioExistente = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
 
-        String rol= usuarioExistente.getRol().getNombre();
-        String zonaOriginal= usuarioExistente.getZona_de_trabajo();
+        String rol = usuarioExistente.getRol().getNombre();
+        String zonaOriginal = usuarioExistente.getZona_de_trabajo();
         Integer cantidadMinima = usuarioExistente.getCantidad_minima();
         modelMapper.map(usuarioDTO, usuarioExistente);
 
-        if (rol.equals("Ciudadano")){
-                usuarioExistente.setZona_de_trabajo(zonaOriginal);
-                usuarioExistente.setCantidad_minima(cantidadMinima);
+        if (rol.equals("Ciudadano")) {
+            usuarioExistente.setZona_de_trabajo(zonaOriginal);
+            usuarioExistente.setCantidad_minima(cantidadMinima);
         }
 
         UsuarioEntity usuarioActualizado = usuarioRepository.save(usuarioExistente);
@@ -77,8 +79,58 @@ public class UsuarioServiceImpl implements UsuarioService {
     public void eliminarPersona(Long idUsuario) {
         UsuarioEntity usuarioEntity = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
-        usuarioEntity.setEstado(false);
         usuarioRepository.delete(usuarioEntity);
+    }
+
+    @Override
+    public void eliminacionPorEstado(Long idUsuario) {
+        int filasActualizadas = usuarioRepository.eliminacionLogica(idUsuario);
+        if (filasActualizadas == 0) {
+            throw new RuntimeException("Usuario no encontrado con ID: " + idUsuario);
+        }
+    }
+
+    //Busca por exactitud
+    @Override
+    public List<UsuarioDTO> encontrarPorNombre(String nombre) {
+        Optional<UsuarioEntity> reExactos = usuarioRepository.findByNombreAndEstadoTrue(nombre);
+        if (!reExactos.isEmpty()) {
+            return reExactos.stream().map(this::convertirADTO).toList();
+        } else {
+            List<UsuarioEntity> parecidos = usuarioRepository.findByNombreContainingIgnoreCaseAndEstadoTrue(nombre);
+            return parecidos.stream().map(this::convertirADTO).toList();
+        }
+    }
+
+    @Override
+    public List<UsuarioDTO> encontrarPorDocumento(String documento) {
+        List<UsuarioEntity> usuarios = usuarioRepository.findByCedulaAndEstadoTrue(documento).stream().toList();
+        if (usuarios.isEmpty()) {
+            usuarios = usuarioRepository.findByNitAndEstadoTrue(documento).stream().toList();
+        }
+        if (usuarios.isEmpty()) {
+            usuarios = usuarioRepository.findByCedulaContainingIgnoreCaseAndEstadoTrue(documento);
+        }
+        if (usuarios.isEmpty()) {
+            usuarios = usuarioRepository.findByNITContainingIgnoreCaseAndEstadoTrue(documento);
+        }
+        if (usuarios.isEmpty()) {
+            throw new RuntimeException("numero de documento no encontrado");
+        }
+        return usuarios.stream().map(this::convertirADTO).toList();
+    }
+
+    @Override
+    public List<UsuarioDTO> encontrarPorCorreo(String correo){
+        List<UsuarioEntity> buscarCorreo = usuarioRepository.findByCorreoAndEstadoTrue(correo).stream().toList();
+        if (buscarCorreo.isEmpty()) {
+            buscarCorreo = usuarioRepository.findByCorreoContainingIgnoreCaseAndEstadoTrue(correo);
+        }
+        if (buscarCorreo.isEmpty()) {
+            throw new RuntimeException("Correo no encontrado");
+        }
+
+        return buscarCorreo.stream().map(this::convertirADTO).toList();
     }
 
     private UsuarioEntity convertirAEntity(UsuarioDTO dto) {

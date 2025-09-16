@@ -35,6 +35,24 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+    //Filtra correo por exactitud y/o coincidencia
+    @GetMapping("/filtrar-correo")
+    public ResponseEntity<List<UsuarioDTO>> obtenerCorreo(@RequestParam String correo) {
+        List<UsuarioDTO> usuarios = usuarioService.encontrarPorCorreo(correo);
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
+    }
+    //Filtra documento (NIT o CEDULA) por exactitud y/o coincidencia
+    @GetMapping("/filtrar-documento")
+    public ResponseEntity<List<UsuarioDTO>> obtenerDocumento(@RequestParam String documento) {
+        List<UsuarioDTO> usuarios = usuarioService.encontrarPorDocumento(documento);
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
+    }
+    //Filtra nombre por exactitud y/o coincidencia
+    @GetMapping("/filtrar-nombre")
+    public ResponseEntity<List<UsuarioDTO>> obtenerNombre(@RequestParam String nombre) {
+        List<UsuarioDTO> usuarios = usuarioService.encontrarPorNombre(nombre);
+        return new ResponseEntity<>(usuarios, HttpStatus.OK);
+    }
 
     //Registra un nuevo usuario
     @PostMapping
@@ -57,9 +75,24 @@ public class UsuarioController {
         }
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarUsuario(@PathVariable Long id) {
-        usuarioService.eliminarPersona(id);
-        return ResponseEntity.ok("Usuario eliminado");
+    @PatchMapping("/eliminar-{id}")
+    public ResponseEntity<String> eliminacionPorEstado(@PathVariable Long id){
+        try{
+            usuarioService.eliminacionPorEstado(id);
+            return ResponseEntity.ok("Usuario eliminado correctamente");
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
     }
+
+    //Metodo de eliminado en base de datos, activar solo si no es suficiente eliminacion logica
+    /*@DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarUsuario(@PathVariable Long id) {
+        try{usuarioService.eliminarPersona(id);
+            return ResponseEntity.ok("Usuario eliminado");
+        } catch (Exception e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+
+    }*/
 }
