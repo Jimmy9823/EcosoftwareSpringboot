@@ -47,9 +47,6 @@ public class UsuarioDTO {
 
     private String zona_de_trabajo;
 
-    @NotBlank(message = "El tipo de rol es obligatorio")
-    private String tipo_rol;
-
     private String horario;
 
     private String certificaciones;

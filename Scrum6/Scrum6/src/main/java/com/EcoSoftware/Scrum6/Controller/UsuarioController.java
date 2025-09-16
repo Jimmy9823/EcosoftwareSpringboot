@@ -17,13 +17,14 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+    //Trae todos los usuarios registrados al cargar el modulo usuarios
     @GetMapping
     public ResponseEntity<List<UsuarioDTO>> listarPersonas() {
         List<UsuarioDTO> personas = usuarioService.listarUsuarios();
         return new ResponseEntity<>(personas, HttpStatus.OK);
     }
 
-
+    //Trae usuarios por ID
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioDTO> obtenerUsuarioPorId(@PathVariable Long id) {
         try {
@@ -34,6 +35,7 @@ public class UsuarioController {
         }
     }
 
+    //Registra un nuevo usuario
     @PostMapping
     public ResponseEntity<UsuarioDTO> insertarUsuario(@Valid @RequestBody UsuarioDTO usuario) {
         try {

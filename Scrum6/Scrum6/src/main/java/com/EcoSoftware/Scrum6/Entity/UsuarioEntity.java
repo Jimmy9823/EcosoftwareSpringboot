@@ -65,9 +65,6 @@ public class UsuarioEntity {
     @Column
     private String zona_de_trabajo;
 
-    @Column(nullable = false)
-    @NotBlank(message = "El tipo de rol es obligatorio")
-    private String tipo_rol;
 
     @Column
     private String horario;

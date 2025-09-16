@@ -31,6 +31,7 @@ public class RolEntity {
     private String descripcion;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private TipoDeRol tipo;
 
     @Column
