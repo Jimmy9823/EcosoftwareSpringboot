@@ -35,7 +35,7 @@ public class RolEntity {
     private TipoDeRol tipo;
 
     @Column
-    private boolean estado;
+    private boolean estado = true;
 
     public enum TipoDeRol {
         Administrador,

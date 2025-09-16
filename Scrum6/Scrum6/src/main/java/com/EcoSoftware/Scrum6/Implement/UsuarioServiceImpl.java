@@ -1,6 +1,7 @@
 package com.EcoSoftware.Scrum6.Implement;
 
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
+import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
@@ -54,13 +55,22 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public UsuarioDTO actualizarPersona(Long idUsuario, UsuarioDTO usuarioDTO) {
+    public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {
         UsuarioEntity usuarioExistente = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
 
+        String rol= usuarioExistente.getRol().getNombre();
+        String zonaOriginal= usuarioExistente.getZona_de_trabajo();
+        Integer cantidadMinima = usuarioExistente.getCantidad_minima();
         modelMapper.map(usuarioDTO, usuarioExistente);
+
+        if (rol.equals("Ciudadano")){
+                usuarioExistente.setZona_de_trabajo(zonaOriginal);
+                usuarioExistente.setCantidad_minima(cantidadMinima);
+        }
+
         UsuarioEntity usuarioActualizado = usuarioRepository.save(usuarioExistente);
-        return convertirADTO(usuarioActualizado);
+        return convertirAEditarUsuarioDTO(usuarioActualizado);
     }
 
     @Override
@@ -68,7 +78,7 @@ public class UsuarioServiceImpl implements UsuarioService {
         UsuarioEntity usuarioEntity = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + idUsuario));
         usuarioEntity.setEstado(false);
-        usuarioRepository.save(usuarioEntity);
+        usuarioRepository.delete(usuarioEntity);
     }
 
     private UsuarioEntity convertirAEntity(UsuarioDTO dto) {
@@ -78,4 +88,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioDTO convertirADTO(UsuarioEntity usuarioEntity) {
         return modelMapper.map(usuarioEntity, UsuarioDTO.class);
     }
+
+    public UsuarioEditarDTO convertirAEditarUsuarioDTO(UsuarioEntity usuarioEntity) {
+        return modelMapper.map(usuarioEntity, UsuarioEditarDTO.class);
+    }
+
 }

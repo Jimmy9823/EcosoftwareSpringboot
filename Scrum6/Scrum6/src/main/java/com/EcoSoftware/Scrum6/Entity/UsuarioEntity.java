@@ -8,6 +8,9 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "usuarios")
@@ -22,8 +25,6 @@ public class UsuarioEntity {
 
     @ManyToOne
     @JoinColumn(name = "rol_id", nullable = false)
-
-    @NotNull(message = "El rol es obligatorio")
     private RolEntity rol;
 
     @Column(nullable = false)
@@ -65,7 +66,6 @@ public class UsuarioEntity {
     @Column
     private String zona_de_trabajo;
 
-
     @Column
     private String horario;
 
@@ -79,7 +79,24 @@ public class UsuarioEntity {
     private Integer cantidad_minima;
 
     @Column(nullable = false)
-    @NotNull(message = "El estado es obligatorio")
-    private Boolean estado;
+    private Boolean estado = true;
 
+    //Por defecto se registra en la bd la fecha y hora actual
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaActualizacion;
+
+    @PrePersist
+    private void prePersist() {
+        this.fechaCreacion = LocalDateTime.now();   // Garantiza que no quede en null
+        this.fechaActualizacion = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    private void preUpdate() {
+        this.fechaActualizacion = LocalDateTime.now();
+    }
 }

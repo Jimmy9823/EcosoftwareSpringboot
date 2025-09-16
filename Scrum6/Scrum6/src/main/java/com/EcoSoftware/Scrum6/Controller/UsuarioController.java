@@ -1,6 +1,7 @@
 package com.EcoSoftware.Scrum6.Controller;
 
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
+import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,5 +45,21 @@ public class UsuarioController {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<UsuarioEditarDTO> actualizarUsuario(@Valid @RequestBody UsuarioEditarDTO usuarioDTO, @PathVariable Long id) {
+        try{
+            UsuarioEditarDTO actualizado = usuarioService.actualizarUsuario(id, usuarioDTO);
+            return ResponseEntity.ok(actualizado);
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarUsuario(@PathVariable Long id) {
+        usuarioService.eliminarPersona(id);
+        return ResponseEntity.ok("Usuario eliminado");
     }
 }

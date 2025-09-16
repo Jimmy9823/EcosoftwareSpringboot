@@ -46,7 +46,7 @@ GET POST PUT DELETE
 📂DTO/ (Data Transfer Objects)  
 Propósito: Contener objetos que transportan datos entre capas (por ejemplo, de Controller a Service o de Service a Controller).  
 Qué contiene: Clases Java simples, normalmente solo con atributos, getters/setters (@Data) y validaciones 
-
+1. **Se añade DTO editable** para **controlar** exactamente que **campos se pueden modificar** y **logica adicional en implement** segun rol o tipo de solicitud   
 ---
 📂Entity/  
 Propósito: Representar las tablas de la base de datos mediante JPA/Hibernate.  
@@ -70,6 +70,7 @@ Qué contiene: Interfaces que extienden JpaRepository o CrudRepository.
 ---
 📂Service/  
 Propósito: Definir contratos de servicios, es decir, qué operaciones de negocio estarán disponibles.  
+Implementa lo declarado en Repository  
 Qué contiene: Interfaces con métodos como crearUsuario(), actualizarUsuario(), listarUsuarios().  
 
 ---

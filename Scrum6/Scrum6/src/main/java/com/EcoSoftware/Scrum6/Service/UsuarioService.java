@@ -1,8 +1,6 @@
 package com.EcoSoftware.Scrum6.Service;
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
-import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
-import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 
 import java.util.List;
 
@@ -15,8 +13,10 @@ public interface UsuarioService {
 
     UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO);
 
-    UsuarioDTO actualizarPersona(Long idUsuario, UsuarioDTO usuarioDTO);
+    UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuDTO);
 
     void eliminarPersona(Long idUsuario);
+
+
 
 }
