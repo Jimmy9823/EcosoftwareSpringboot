@@ -75,7 +75,7 @@ public class UsuarioController {
         }
     }
 
-    @PatchMapping("/eliminar-{id}")
+    @PatchMapping("/eliminar/{id}")
     public ResponseEntity<String> eliminacionPorEstado(@PathVariable Long id){
         try{
             usuarioService.eliminacionPorEstado(id);

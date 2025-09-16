@@ -112,7 +112,7 @@ public class UsuarioServiceImpl implements UsuarioService {
             usuarios = usuarioRepository.findByCedulaContainingIgnoreCaseAndEstadoTrue(documento);
         }
         if (usuarios.isEmpty()) {
-            usuarios = usuarioRepository.findByNITContainingIgnoreCaseAndEstadoTrue(documento);
+            usuarios = usuarioRepository.findByNitContainingIgnoreCaseAndEstadoTrue(documento);
         }
         if (usuarios.isEmpty()) {
             throw new RuntimeException("numero de documento no encontrado");
