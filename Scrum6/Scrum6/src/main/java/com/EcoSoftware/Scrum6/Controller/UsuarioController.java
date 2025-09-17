@@ -13,7 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/personas")
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = " http://localhost:4200", allowCredentials = "true")
 public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
@@ -83,6 +83,11 @@ public class UsuarioController {
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
+    }
+
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("Backend OK");
     }
 
     //Metodo de eliminado en base de datos, activar solo si no es suficiente eliminacion logica
