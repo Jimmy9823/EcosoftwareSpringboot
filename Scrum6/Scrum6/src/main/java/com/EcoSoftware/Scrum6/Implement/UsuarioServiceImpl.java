@@ -81,9 +81,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioRepository.delete(usuarioEntity);
     }
 
-    private UsuarioEntity convertirAEntity(UsuarioDTO dto) {
+    /*private UsuarioEntity convertirAEntity(UsuarioDTO dto) {
         return modelMapper.map(dto, UsuarioEntity.class);
-    }
+    }*/
 
     public UsuarioDTO convertirADTO(UsuarioEntity usuarioEntity) {
         return modelMapper.map(usuarioEntity, UsuarioDTO.class);
