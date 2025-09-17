@@ -47,7 +47,7 @@ public class UsuarioEntity {
     private String telefono;
 
     @Column(unique = true)
-    private String NIT;
+    private String nit;
 
     @Column
     private String direccion;

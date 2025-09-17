@@ -37,7 +37,7 @@ public class UsuarioDTO {
     @NotBlank(message = "El teléfono es obligatorio")
     private String telefono;
 
-    private String NIT;
+    private String nit;
 
     private String direccion;
 

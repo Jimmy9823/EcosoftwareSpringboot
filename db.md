@@ -27,7 +27,10 @@ VALUES (1, 'Juan Pérez','contraseña123','juan.perez@example.com','123456789','
 'Calle Ficticia 123','Zona Norte','9:00 AM - 6:00 PM','Certificación A, Certificación B', 'imagen.jpg', 10);
 ```
 
-### Anotaciones importantes
+### Anotaciones importantes  
+1. Ingresar usuarios por consola de Mysql muestra las fechas como null 00/00/0000
+
+### Modificaciones estructura
 1. Los campos zona de trabajo y certificaciones deberian ser tablas aparte,
 esto porque podrian ser tuplas o arrays y contener varios registros. 
 Esto viola la 1FN de bd, no es un registro atomico.

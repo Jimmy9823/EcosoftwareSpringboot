@@ -1,9 +1,9 @@
 ## Estructura del proyecto  
 
 ```  
- 🗂️EcoSoftwareSpringboot/  
-├── 🗂️.idea/                  # Configuración de IntelliJ  
-├── 🗂️.mvn/                   # Wrapper de Maven  
+ EcoSoftwareSpringboot/  
+├── 🗂️.idea/                  
+├── 🗂️.mvn/                   
 │   └── 🗂️wrapper/  
 ├── 🗂️src/  
 │   ├── 🗂️main/  
@@ -11,25 +11,39 @@
 │   │   │   └── 🗂️com/  
 │   │   │       └── 🗂️EcoSoftware/  
 │   │   │           └── 🗂️Scrum6/
-│   │   │               ├── 🗂️Config/            # _Java Class_🔵Clases de configuración (Security, CORS, JPA)  
-│   │   │               ├── 🗂️Controller/        # _Java Class_🔵Controladores REST o MVC  
-│   │   │               ├── 🗂️DTO/               # _Java Class_🔵Data Transfer Objects  
-│   │   │               ├── 🗂️Entity/            # _Java Class_🔵Clases de entidad (JPA)  
-│   │   │               ├── 🗂️Exception/         # _Java Class_🔵Clases para manejo de excepciones  
-│   │   │               ├── 🗂️Implement/         # _Java Class_🔵Implementaciones de servicios  
-│   │   │               ├── 🗂️Repository/        # _Java Interface_🟢Interfaces de repositorio JPA  
-│   │   │               ├── 🗂️Service/           # _Java Interface_🟢Interfaces de servicios  
-│   │   │               └── 🔵 Scrum6Application.java  # Clase principal con @SpringBootApplication  
+│   │   │               ├── 🗂️Config/              
+│   │   │               ├── 🗂️Controller/        
+│   │   │               │   ├── 🔵 UsuarioController.java  
+│   │   │               │   └── 🔵 RolController.java  
+│   │   │               ├── 🗂️DTO/               
+│   │   │               │   ├── 🔵 UsuarioDTO.java  
+│   │   │               │   └── 🔵 UsuarioEditarDTO.java 
+│   │   │               │   └── 🔵 RolDTO.java 
+│   │   │               ├── 🗂️Entity/            
+│   │   │               │   ├── 🔵 UsuarioEntity.java  
+│   │   │               │   └── 🔵 RolEntity.java  
+│   │   │               ├── 🗂️Exception/         
+│   │   │               ├── 🗂️Implement/         
+│   │   │               │   ├── 🔵 UsuarioImplement.java  
+│   │   │               │   └── 🔵 RolImplement.java  
+│   │   │               ├── 🗂️Repository/        
+│   │   │               │   ├── 🟢 UsuarioRepository.java  
+│   │   │               │   └── 🟢 RolRepository.java  
+│   │   │               ├── 🗂️Service/           
+│   │   │               │   ├── 🟢 UsuarioService.java  
+│   │   │               │   └── 🟢 RolService.java  
+│   │   │               └── 🔵 Scrum6Application.java  
 │   │   └── 🗂️resources/  
-│   │       ├── 🗂️application.properties         # Configuración de Spring Boot  
-│   │       └── 🗂️static/                        # Archivos estáticos (CSS, JS, imágenes)  
-│   │       └── 🗂️templates/                     # Plantillas Thymeleaf (si aplica)  
+│   │       ├── 🗂️application.properties         
+│   │       └── 🗂️static/                        
+│   │       └── 🗂️templates/                     
 │   └── 🗂️test/  
 │       └── 🗂️java/...   
-├── 🗂️target/                  # Compilados generados por Maven  
-├── 📝pom.xml                  # Archivo de dependencias y build de Maven  
-├── 📝.gitignore               # Ignorar archivos para Git  
+├── 🗂️target/                  
+├── 📝pom.xml                  
+├── 📝.gitignore               
 └── 📝README.md  
+
 ```
 ---
 **Controller  -->  Service (interface)  -->  Implement (lógica)  -->  Repository  -->  Entity (BD)
@@ -45,12 +59,11 @@ GET POST PUT DELETE
 ---
 📂DTO/ (Data Transfer Objects)  
 Propósito: Contener objetos que transportan datos entre capas (por ejemplo, de Controller a Service o de Service a Controller).  
-Qué contiene: Clases Java simples, normalmente solo con atributos, getters/setters (@Data) y validaciones 
-1. **Se añade DTO editable** para **controlar** exactamente que **campos se pueden modificar** y **logica adicional en implement** segun rol o tipo de solicitud   
+Qué contiene: Clases Java simples, normalmente solo con atributos, getters/setters (@Data) y validaciones  
 ---
 📂Entity/  
 Propósito: Representar las tablas de la base de datos mediante JPA/Hibernate.  
-Qué contiene: Clases anotadas con @Entity y @Table. Cada clase normalmente corresponde a una tabla.  
+Qué contiene: Clases anotadas con @Entity y @Table. Cada clase normalmente corresponde a una tabla.
 
 ---
 📂Exception/  
