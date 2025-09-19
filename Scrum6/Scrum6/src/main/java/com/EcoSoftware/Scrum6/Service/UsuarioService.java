@@ -1,11 +1,7 @@
 package com.EcoSoftware.Scrum6.Service;
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
-import com.EcoSoftware.Scrum6.Entity.RolEntity;
-import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
-
 import java.util.List;
-import java.util.Optional;
 
 
 public interface UsuarioService {
