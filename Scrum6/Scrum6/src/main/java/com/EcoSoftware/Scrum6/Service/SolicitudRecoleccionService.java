@@ -1,43 +1,27 @@
 package com.EcoSoftware.Scrum6.Service;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-
-import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
+import java.util.List;
+import java.util.Optional;
 
 public interface SolicitudRecoleccionService {
 
-    /*CRUD de Solicitud Recolección */
+    // Crear una nueva solicitud
+    SolicitudRecoleccionEntity crearSolicitud(SolicitudRecoleccionEntity solicitud);
 
-    //Crear Solicitud de Recolección
-    SolicitudRecoleccionDTO crearSolicitud(SolicitudRecoleccionDTO solicitudRecoleccionDTO);
+    // Buscar solicitud por ID
+    Optional<SolicitudRecoleccionEntity> obtenerPorId(Long id);
 
-    //Buscar Solicitud de Recolección por ID
-    SolicitudRecoleccionDTO obtenerPorId(Long id);
+    // Listar todas las solicitudes
+    List<SolicitudRecoleccionEntity> listarTodas();
 
-    //Listar todas las Solicitudes de Recolección
-    List<SolicitudRecoleccionDTO> listarTodas();
+    // Listar solicitudes por estado (Pendiente, Aceptada, Rechazada)
+    List<SolicitudRecoleccionEntity> listarPorEstado(String estado);
 
-    //Actualizar Solicitud de Recolección
-    SolicitudRecoleccionDTO actualizarSolicitud(Long id, SolicitudRecoleccionDTO solicitudRecoleccionDTO);
+    // Aceptar solicitud → genera una Recolección
+    SolicitudRecoleccionEntity aceptarSolicitud(Long solicitudId, Long recolectorId);
 
-    //Eliminar Solicitud de Recolección
-    void eliminarSolicitud(Long id);
-    
+    // Rechazar solicitud
+    SolicitudRecoleccionEntity rechazarSolicitud(Long solicitudId, String motivo);
+}
 
-    /* Tipos de listar para Solicitudes de Recolección */
-
-    //Listar Solicitudes de Recolección por usuario(Ciudadano)
-    List<SolicitudRecoleccionDTO> listarPorUsuario(Long usuarioId);
-
-    //Listar Solicitudes de Recolección por estado
-    List<SolicitudRecoleccionDTO> listarPorEstado(SolicitudRecoleccionEntity.EstadoPeticion estado);
-
-    //Listar Solicitudes de Recolección por fecha
-    List<SolicitudRecoleccionDTO> listarPorFecha(OffsetDateTime fechaProgramada);
-
-    //Listar Solicitudes de Recolección por tipo de residuo
-    List<SolicitudRecoleccionDTO> listarPorTipoResiduo(SolicitudRecoleccionEntity.TipoResiduo tipoResiduo);
-
-} 

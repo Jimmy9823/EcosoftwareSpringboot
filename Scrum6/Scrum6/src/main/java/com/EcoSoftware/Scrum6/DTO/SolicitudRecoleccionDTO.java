@@ -1,43 +1,27 @@
 package com.EcoSoftware.Scrum6.DTO;
 
-import java.math.BigDecimal;
-import java.time.OffsetDateTime;
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+
+import java.time.OffsetDateTime;
 
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class SolicitudRecoleccionDTO {
+    private Long idSolicitud;
+    private Long usuarioId;          // Id del ciudadano que crea la solicitud
+    private Long aceptadaPorId;      // Id del usuario que acepta la solicitud (empresa/reciclador)
 
-    private Long id;
-
-    @NotNull(message = "El tipo de residuo es obligatorio")
-    private SolicitudRecoleccionEntity.TipoResiduo tipoResiduo;
-
-    @NotNull(message = "La cantidad es obligatoria")
-    private BigDecimal cantidad;
-
-    private SolicitudRecoleccionEntity.EstadoPeticion estadoPeticion; 
-
-    @NotBlank(message = "La descripción nos ayuda a entender mejor tu solicitud")
+    private TipoResiduo tipoResiduo;
+    private String cantidad;
+    private EstadoPeticion estadoPeticion;
     private String descripcion;
-
-    @NotBlank(message = "La ubicación es obligatoria")
+    private Localidad localidad;
     private String ubicacion;
-
-    @NotBlank(message = "La evidencia es obligatoria")
-    private String evidencia;  
-
-    private OffsetDateTime fechaCreacion;   // generado automáticamente
-
-    @NotNull(message = "La fecha programada es obligatoria")
+    private String evidencia;
+    private OffsetDateTime fechaCreacionSolicitud;
     private OffsetDateTime fechaProgramada;
 
-    private Long usuarioId; 
+    private Long recoleccionId;      // Relación con la recolección generada
 }
-

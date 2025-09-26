@@ -65,6 +65,7 @@ public class UsuarioController {
         }
     }
 
+    //Actualiza un usuario existente
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioEditarDTO> actualizarUsuario(@Valid @RequestBody UsuarioEditarDTO usuarioDTO, @PathVariable Long id) {
         try{
