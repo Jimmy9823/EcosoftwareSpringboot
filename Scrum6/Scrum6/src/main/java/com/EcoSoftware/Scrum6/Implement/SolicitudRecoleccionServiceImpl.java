@@ -1,144 +1,98 @@
 package com.EcoSoftware.Scrum6.Implement;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
+import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity.EstadoPeticion;
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity.TipoResiduo;
+import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion;
+import com.EcoSoftware.Scrum6.Repository.RecoleccionRepository;
 import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
+import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
 
 @Service
+@RequiredArgsConstructor
 public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionService {
 
-    @Autowired
-    private SolicitudRecoleccionRepository solicitudRecoleccionRepository;
+    // Los repositorios deben estar aquí
+    private final SolicitudRecoleccionRepository solicitudRepository;
+    private final RecoleccionRepository recoleccionRepository;
+    private final UsuarioRepository usuarioRepository;
 
-    /* Métodos del Servicio */
-
-    // Crear una nueva solicitud de recolección
     @Override
-    public SolicitudRecoleccionDTO crearSolicitud(SolicitudRecoleccionDTO solicitudRecoleccionDTO) {
-        SolicitudRecoleccionEntity solicitudRecoleccionEntity = convertirDTOAEntidad(solicitudRecoleccionDTO);
-        SolicitudRecoleccionEntity nuevaSolicitud = solicitudRecoleccionRepository.save(solicitudRecoleccionEntity);
-        return convertirEntidadADTO(nuevaSolicitud);
+    public SolicitudRecoleccionEntity crearSolicitud(SolicitudRecoleccionEntity solicitud) {
+        solicitud.setEstadoPeticion(EstadoPeticion.Pendiente);
+        return solicitudRepository.save(solicitud);
     }
 
     @Override
-    public SolicitudRecoleccionDTO obtenerPorId(Long id) {
-        SolicitudRecoleccionEntity solicitudRecoleccionEntity = solicitudRecoleccionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-        return convertirEntidadADTO(solicitudRecoleccionEntity);
+    public Optional<SolicitudRecoleccionEntity> obtenerPorId(Long id) {
+        return solicitudRepository.findById(id);
     }
 
     @Override
-    public List<SolicitudRecoleccionDTO> listarTodas() {
-        List<SolicitudRecoleccionEntity> solicitudes = solicitudRecoleccionRepository.findAll();
-        return solicitudes.stream()
-                .map(this::convertirEntidadADTO)
-                .collect(Collectors.toList());
+    public List<SolicitudRecoleccionEntity> listarTodas() {
+        return solicitudRepository.findAll();
     }
 
     @Override
-    public SolicitudRecoleccionDTO actualizarSolicitud(Long id, SolicitudRecoleccionDTO solicitudRecoleccionDTO) {
-        SolicitudRecoleccionEntity solicitudRecoleccionEntity = solicitudRecoleccionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-        // Actualizar los campos de la entidad con los valores del DTO
-        solicitudRecoleccionEntity.setTipoResiduo(solicitudRecoleccionDTO.getTipoResiduo());
-        solicitudRecoleccionEntity.setCantidad(solicitudRecoleccionDTO.getCantidad());
-        solicitudRecoleccionEntity.setEstadoPeticion(solicitudRecoleccionDTO.getEstadoPeticion());
-        solicitudRecoleccionEntity.setDescripcion(solicitudRecoleccionDTO.getDescripcion());
-        solicitudRecoleccionEntity.setUbicacion(solicitudRecoleccionDTO.getUbicacion());
-        solicitudRecoleccionEntity.setEvidencia(solicitudRecoleccionDTO.getEvidencia());
-        solicitudRecoleccionEntity.setFechaProgramada(solicitudRecoleccionDTO.getFechaProgramada());
-        // Guardar los cambios en la base de datos
-        SolicitudRecoleccionEntity solicitudActualizada = solicitudRecoleccionRepository.save(solicitudRecoleccionEntity);
-        return convertirEntidadADTO(solicitudActualizada);
+    public List<SolicitudRecoleccionEntity> listarPorEstado(String estado) {
+        EstadoPeticion estadoEnum = EstadoPeticion.valueOf(estado);
+        return solicitudRepository.findByEstadoPeticion(estadoEnum);
     }
 
     @Override
-    public void eliminarSolicitud(Long id) {
-        SolicitudRecoleccionEntity solicitudRecoleccionEntity = solicitudRecoleccionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-        solicitudRecoleccionRepository.delete(solicitudRecoleccionEntity);        
+    @Transactional
+    public SolicitudRecoleccionEntity aceptarSolicitud(Long solicitudId, Long recolectorId) {
+        // Buscar solicitud
+        SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada"));
+
+        if (!solicitud.getEstadoPeticion().equals(EstadoPeticion.Pendiente)) {
+            throw new IllegalStateException("La solicitud ya fue procesada");
+        }
+
+        // Buscar recolector/empresa que acepta
+        UsuarioEntity recolector = usuarioRepository.findById(recolectorId)
+                .orElseThrow(() -> new EntityNotFoundException("Recolector no encontrado"));
+
+        // Cambiar estado de la solicitud y asignar recolector
+        solicitud.setEstadoPeticion(EstadoPeticion.Aceptada);
+        solicitud.setAceptadaPor(recolector);
+
+        // Crear recolección asociada
+        RecoleccionEntity recoleccion = new RecoleccionEntity();
+        recoleccion.setSolicitud(solicitud);
+        recoleccion.setRecolector(recolector);
+        recoleccion.setEstado(EstadoRecoleccion.Pendiente);
+        recoleccion.setFechaRecoleccion(solicitud.getFechaProgramada()); // 🔹 copiar fecha programada
+
+        recoleccionRepository.save(recoleccion);
+
+        // Asociar la recolección con la solicitud
+        solicitud.setRecoleccion(recoleccion);
+
+        return solicitudRepository.save(solicitud);
     }
 
     @Override
-    public List<SolicitudRecoleccionDTO> listarPorUsuario(Long usuarioId) {
-        List<SolicitudRecoleccionEntity> solicitudes = solicitudRecoleccionRepository.findByUsuarioId(usuarioId);
-        return solicitudes.stream()
-                .map(this::convertirEntidadADTO)
-                .collect(Collectors.toList());
+    public SolicitudRecoleccionEntity rechazarSolicitud(Long solicitudId, String motivo) {
+        SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(solicitudId)
+                .orElseThrow(() -> new EntityNotFoundException("Solicitud no encontrada"));
+
+        if (!solicitud.getEstadoPeticion().equals(EstadoPeticion.Pendiente)) {
+            throw new IllegalStateException("La solicitud ya fue procesada");
+        }
+
+        solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
+        // ⚡ Si quieres guardar el motivo, añade un campo en la entidad SolicitudRecoleccionEntity
+        return solicitudRepository.save(solicitud);
     }
-
-    @Override
-    public List<SolicitudRecoleccionDTO> listarPorEstado(EstadoPeticion estado) {
-        List<SolicitudRecoleccionEntity> solicitudes = solicitudRecoleccionRepository.findByEstadoPeticion(estado);
-        return solicitudes.stream()
-                .map(this::convertirEntidadADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<SolicitudRecoleccionDTO> listarPorFecha(OffsetDateTime fechaProgramada) {
-        List<SolicitudRecoleccionEntity> solicitudes = solicitudRecoleccionRepository.findByFechaProgramada(fechaProgramada);
-        return solicitudes.stream()
-                .map(this::convertirEntidadADTO)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public List<SolicitudRecoleccionDTO> listarPorTipoResiduo(TipoResiduo tipoResiduo) {
-        List<SolicitudRecoleccionEntity> solicitudes = solicitudRecoleccionRepository.findByTipoResiduo(tipoResiduo);
-        return solicitudes.stream()
-                .map(this::convertirEntidadADTO)
-                .collect(Collectors.toList());
-    }
-
-
-    /*Metodo de Mapeo  */
-
-    // Convertir de Entidad a DTO
-    private SolicitudRecoleccionDTO convertirEntidadADTO(SolicitudRecoleccionEntity solicitudRecoleccionEntity) {
-        SolicitudRecoleccionDTO solicitudRecoleccionDTO = new SolicitudRecoleccionDTO();
-        solicitudRecoleccionDTO.setId(solicitudRecoleccionEntity.getId());
-        solicitudRecoleccionDTO.setTipoResiduo(solicitudRecoleccionEntity.getTipoResiduo());
-        solicitudRecoleccionDTO.setCantidad(solicitudRecoleccionEntity.getCantidad());
-        solicitudRecoleccionDTO.setEstadoPeticion(solicitudRecoleccionEntity.getEstadoPeticion());
-        solicitudRecoleccionDTO.setDescripcion(solicitudRecoleccionEntity.getDescripcion());
-        solicitudRecoleccionDTO.setUbicacion(solicitudRecoleccionEntity.getUbicacion());
-        solicitudRecoleccionDTO.setEvidencia(solicitudRecoleccionEntity.getEvidencia());
-        solicitudRecoleccionDTO.setFechaCreacion(solicitudRecoleccionEntity.getFechaCreacion());
-        solicitudRecoleccionDTO.setFechaProgramada(solicitudRecoleccionEntity.getFechaProgramada());
-        solicitudRecoleccionDTO.setUsuarioId(solicitudRecoleccionEntity.getUsuario().getIdUsuario());
-
-        // Mapear otros campos según sea necesario
-        return solicitudRecoleccionDTO;
-    }
-
-    // Convertir de DTO a Entidad
-    private SolicitudRecoleccionEntity convertirDTOAEntidad(SolicitudRecoleccionDTO solicitudRecoleccionDTO) {
-        SolicitudRecoleccionEntity solicitudRecoleccionEntity = new SolicitudRecoleccionEntity();
-        solicitudRecoleccionEntity.setId(solicitudRecoleccionDTO.getId());
-        solicitudRecoleccionEntity.setTipoResiduo(solicitudRecoleccionDTO.getTipoResiduo());
-        solicitudRecoleccionEntity.setCantidad(solicitudRecoleccionDTO.getCantidad());
-        solicitudRecoleccionEntity.setEstadoPeticion(solicitudRecoleccionDTO.getEstadoPeticion());
-        solicitudRecoleccionEntity.setDescripcion(solicitudRecoleccionDTO.getDescripcion());
-        solicitudRecoleccionEntity.setUbicacion(solicitudRecoleccionDTO.getUbicacion());
-        solicitudRecoleccionEntity.setEvidencia(solicitudRecoleccionDTO.getEvidencia());
-        solicitudRecoleccionEntity.setFechaCreacion(solicitudRecoleccionDTO.getFechaCreacion());
-        solicitudRecoleccionEntity.setFechaProgramada(solicitudRecoleccionDTO.getFechaProgramada());
-        // La asignación del usuario debe manejarse en el servicio, ya que requiere cargar la entidad Usuario
-        // Mapear otros campos según sea necesario
-        return solicitudRecoleccionEntity;
-    }
-
-
-
 }

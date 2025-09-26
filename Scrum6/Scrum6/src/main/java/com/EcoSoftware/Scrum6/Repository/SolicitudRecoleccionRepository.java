@@ -1,28 +1,35 @@
 package com.EcoSoftware.Scrum6.Repository;
 
-import java.time.OffsetDateTime;
-import java.util.List;
-
+import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
+import java.util.List;
 
 @Repository
 public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudRecoleccionEntity, Long> {
 
-    // Buscar por usuario
-    List<SolicitudRecoleccionEntity> findByUsuarioId(Long usuarioId);
+    // Buscar solicitudes por estado
+    List<SolicitudRecoleccionEntity> findByEstadoPeticion(EstadoPeticion estadoPeticion);
 
-    // Buscar por estado
-    List<SolicitudRecoleccionEntity> findByEstadoPeticion(SolicitudRecoleccionEntity.EstadoPeticion estado);
+    // Buscar solicitudes de un usuario (ciudadano)
+    List<SolicitudRecoleccionEntity> findByUsuario_IdUsuario(Long usuarioId);
 
-    // Buscar por tipo de residuo
-    List<SolicitudRecoleccionEntity> findByTipoResiduo(SolicitudRecoleccionEntity.TipoResiduo tipoResiduo);
+    // Buscar solicitudes aceptadas por un recolector/empresa
+    List<SolicitudRecoleccionEntity> findByAceptadaPor_IdUsuario(Long usuarioId);
 
-    // Buscar por fecha programada exacta
-    List<SolicitudRecoleccionEntity> findByFechaProgramada(OffsetDateTime fechaProgramada);
+    // Buscar solicitudes por localidad
+    List<SolicitudRecoleccionEntity> findByLocalidad(Localidad localidad);
 
-    // Buscar por rango de fechas (ejemplo: solicitudes entre dos días)
-    List<SolicitudRecoleccionEntity> findByFechaProgramadaBetween(OffsetDateTime inicio, OffsetDateTime fin);
+    // Buscar solicitudes por tipo de residuo
+    List<SolicitudRecoleccionEntity> findByTipoResiduo(TipoResiduo tipoResiduo);
+
+    // Buscar solicitudes de un usuario en un estado específico
+    List<SolicitudRecoleccionEntity> findByUsuario_IdUsuarioAndEstadoPeticion(Long usuarioId, EstadoPeticion estadoPeticion);
+
+    // Buscar solicitudes por localidad y tipo de residuo
+    List<SolicitudRecoleccionEntity> findByLocalidadAndTipoResiduo(Localidad localidad, TipoResiduo tipoResiduo);
 }
