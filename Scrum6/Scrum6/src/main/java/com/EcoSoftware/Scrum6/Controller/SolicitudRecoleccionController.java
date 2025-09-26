@@ -67,7 +67,7 @@ public class SolicitudRecoleccionController {
         return ResponseEntity.ok(toDto(updated));
     }
 
-    // 🔹 Mapper de entidad → DTO
+    // Mapper de entidad → DTO
     private SolicitudRecoleccionDTO toDto(SolicitudRecoleccionEntity s) {
         SolicitudRecoleccionDTO dto = new SolicitudRecoleccionDTO();
         dto.setIdSolicitud(s.getIdSolicitud());

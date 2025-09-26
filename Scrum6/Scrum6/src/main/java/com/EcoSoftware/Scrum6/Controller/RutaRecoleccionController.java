@@ -59,7 +59,7 @@ public class RutaRecoleccionController {
         return ResponseEntity.noContent().build();
     }
 
-    // 🔹 Mapper: Entity → DTO
+    // Mapper: Entity → DTO
     private RutaRecoleccionDTO toDto(RutaRecoleccionEntity r) {
         RutaRecoleccionDTO dto = new RutaRecoleccionDTO();
         dto.setIdRuta(r.getIdRuta());

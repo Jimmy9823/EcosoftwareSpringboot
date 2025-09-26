@@ -21,7 +21,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionService {
 
-    // Los repositorios deben estar aquí
+    
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final RecoleccionRepository recoleccionRepository;
     private final UsuarioRepository usuarioRepository;
@@ -72,7 +72,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         recoleccion.setSolicitud(solicitud);
         recoleccion.setRecolector(recolector);
         recoleccion.setEstado(EstadoRecoleccion.Pendiente);
-        recoleccion.setFechaRecoleccion(solicitud.getFechaProgramada()); // 🔹 copiar fecha programada
+        recoleccion.setFechaRecoleccion(solicitud.getFechaProgramada()); 
 
         recoleccionRepository.save(recoleccion);
 
@@ -92,7 +92,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         }
 
         solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
-        // ⚡ Si quieres guardar el motivo, añade un campo en la entidad SolicitudRecoleccionEntity
+        
         return solicitudRepository.save(solicitud);
     }
 }

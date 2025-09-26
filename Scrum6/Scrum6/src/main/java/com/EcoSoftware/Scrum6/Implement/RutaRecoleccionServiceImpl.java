@@ -46,7 +46,6 @@ public class RutaRecoleccionServiceImpl implements RutaRecoleccionService {
         existente.setNombre(rutaActualizada.getNombre());
         existente.setDescripcion(rutaActualizada.getDescripcion());
         existente.setZonasCubiertas(rutaActualizada.getZonasCubiertas());
-        // no actualizo recolector ni recolecciones aquí, para mantener consistencia
 
         return rutaRepository.save(existente);
     }
