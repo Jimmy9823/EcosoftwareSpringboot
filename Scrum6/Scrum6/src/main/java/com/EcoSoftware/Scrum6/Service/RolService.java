@@ -7,8 +7,6 @@ import java.util.List;
 public interface RolService {
     List<RolDTO> listarRoles();
 
-    RolDTO obtenerRolPorId(Long idRol);
-
     RolDTO crearRol(RolDTO rolDTO);
 
     RolDTO actualizarRol(Long idRol, RolDTO rolDTO);
