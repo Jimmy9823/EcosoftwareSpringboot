@@ -11,6 +11,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -40,21 +41,35 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
 
+
     @Override
     public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
+        if (usuarioDTO.getRolId() == null) {
+            throw new RuntimeException("El rol es obligatorio");
+        }
+
         UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
 
-        if (usuarioDTO.getRolId() != null) {
-            RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
-                    .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
-            entity.setRol(rol);
-        } else {
-            throw new RuntimeException("El rol es obligatorio");
+        // Rol obligatorio
+        RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
+        entity.setRol(rol);
+
+        // Valores por defecto si no vienen de Angular
+        if (entity.getEstado() == null) {
+            entity.setEstado(true);
+        }
+        if (entity.getFechaCreacion() == null) {
+            entity.setFechaCreacion(LocalDateTime.now());
+        }
+        if (entity.getFechaActualizacion() == null) {
+            entity.setFechaActualizacion(LocalDateTime.now());
         }
 
         UsuarioEntity saved = usuarioRepository.save(entity);
         return modelMapper.map(saved, UsuarioDTO.class);
     }
+
 
     @Override
     public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {
