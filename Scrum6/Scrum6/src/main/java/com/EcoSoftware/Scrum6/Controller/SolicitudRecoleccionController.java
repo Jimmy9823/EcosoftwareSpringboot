@@ -1,88 +1,70 @@
 package com.EcoSoftware.Scrum6.Controller;
 
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
 import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
-import lombok.RequiredArgsConstructor;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/solicitudes")
-@RequiredArgsConstructor
 public class SolicitudRecoleccionController {
 
     private final SolicitudRecoleccionService solicitudService;
 
-    @PostMapping
-    public ResponseEntity<SolicitudRecoleccionDTO> crear(@RequestBody SolicitudRecoleccionEntity solicitud) {
-        SolicitudRecoleccionEntity saved = solicitudService.crearSolicitud(solicitud);
-        return ResponseEntity.ok(toDto(saved));
+    public SolicitudRecoleccionController(SolicitudRecoleccionService solicitudService) {
+        this.solicitudService = solicitudService;
     }
 
+    // Crear nueva solicitud
+    @PostMapping
+    public ResponseEntity<SolicitudRecoleccionDTO> crearSolicitud(@RequestBody SolicitudRecoleccionDTO dto) {
+        return ResponseEntity.ok(solicitudService.crearSolicitud(dto));
+    }
 
+    // Obtener solicitud por ID
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudRecoleccionDTO> obtenerPorId(@PathVariable Long id) {
-        return solicitudService.obtenerPorId(id)
-                .map(s -> ResponseEntity.ok(toDto(s)))
-                .orElse(ResponseEntity.notFound().build());
+        return ResponseEntity.ok(solicitudService.obtenerPorId(id));
     }
 
+    // Listar todas las solicitudes
     @GetMapping
     public ResponseEntity<List<SolicitudRecoleccionDTO>> listarTodas() {
-        List<SolicitudRecoleccionDTO> dtos = solicitudService.listarTodas()
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+        return ResponseEntity.ok(solicitudService.listarTodas());
     }
 
+    // Listar solicitudes por estado
     @GetMapping("/estado/{estado}")
-    public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorEstado(@PathVariable String estado) {
-        List<SolicitudRecoleccionDTO> dtos = solicitudService.listarPorEstado(estado)
-                .stream()
-                .map(this::toDto)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(dtos);
+    public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorEstado(@PathVariable EstadoPeticion estado) {
+        return ResponseEntity.ok(solicitudService.listarPorEstado(estado));
     }
 
+    // Aceptar solicitud (solo si está pendiente)
     @PostMapping("/{id}/aceptar/{recolectorId}")
-    public ResponseEntity<SolicitudRecoleccionDTO> aceptar(
+    public ResponseEntity<SolicitudRecoleccionDTO> aceptarSolicitud(
             @PathVariable Long id,
-            @PathVariable Long recolectorId
-    ) {
-        SolicitudRecoleccionEntity updated = solicitudService.aceptarSolicitud(id, recolectorId);
-        return ResponseEntity.ok(toDto(updated));
+            @PathVariable Long recolectorId) {
+        return ResponseEntity.ok(solicitudService.aceptarSolicitud(id, recolectorId));
     }
 
+    // Rechazar solicitud (solo si está pendiente)
     @PostMapping("/{id}/rechazar")
-    public ResponseEntity<SolicitudRecoleccionDTO> rechazar(
+    public ResponseEntity<SolicitudRecoleccionDTO> rechazarSolicitud(
             @PathVariable Long id,
-            @RequestParam String motivo
-    ) {
-        SolicitudRecoleccionEntity updated = solicitudService.rechazarSolicitud(id, motivo);
-        return ResponseEntity.ok(toDto(updated));
+            @RequestParam String motivo) {
+        return ResponseEntity.ok(solicitudService.rechazarSolicitud(id, motivo));
     }
 
-    // Mapper de entidad → DTO
-    private SolicitudRecoleccionDTO toDto(SolicitudRecoleccionEntity s) {
-        SolicitudRecoleccionDTO dto = new SolicitudRecoleccionDTO();
-        dto.setIdSolicitud(s.getIdSolicitud());
-        dto.setUsuarioId(s.getUsuario() != null ? s.getUsuario().getIdUsuario() : null);
-        dto.setAceptadaPorId(s.getAceptadaPor() != null ? s.getAceptadaPor().getIdUsuario() : null);
-        dto.setTipoResiduo(s.getTipoResiduo());
-        dto.setCantidad(s.getCantidad());
-        dto.setEstadoPeticion(s.getEstadoPeticion());
-        dto.setDescripcion(s.getDescripcion());
-        dto.setLocalidad(s.getLocalidad());
-        dto.setUbicacion(s.getUbicacion());
-        dto.setEvidencia(s.getEvidencia());
-        dto.setFechaCreacionSolicitud(s.getFechaCreacionSolicitud());
-        dto.setFechaProgramada(s.getFechaProgramada());
-        dto.setRecoleccionId(s.getRecoleccion() != null ? s.getRecoleccion().getIdRecoleccion() : null);
-        return dto;
+    // Actualizar solicitud (solo si está pendiente)
+    @PutMapping("/{id}")
+    public ResponseEntity<SolicitudRecoleccionDTO> actualizarSolicitud(
+            @PathVariable Long id,
+            @RequestBody SolicitudRecoleccionDTO dto) {
+
+        dto.setIdSolicitud(id); 
+        return ResponseEntity.ok(solicitudService.actualizarSolicitud(dto));
     }
 }
