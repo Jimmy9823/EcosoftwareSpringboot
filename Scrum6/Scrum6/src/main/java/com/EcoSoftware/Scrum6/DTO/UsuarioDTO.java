@@ -13,51 +13,54 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-
 public class UsuarioDTO {
     private Long idUsuario;
 
     @NotNull(message = "El rol es obligatorio")
-    private Long rolId; // Solo almacenamos el ID del rol para el DTO
+    private Long rolId;
 
-    @NotBlank(message = "El nombre es obligatorio")
-    @Size(min = 2, max = 70, message = "El nombre debe tener entre 2 y 70 caracteres")
+    @NotBlank
     private String nombre;
 
-    @NotBlank(message = "La contraseña es obligatoria")
+    @NotBlank
     private String contrasena;
 
-    @NotBlank(message = "El correo es obligatorio")
-    @Email(message = "El correo debe ser válido")
+    @NotBlank
+    @Email
     private String correo;
 
-    @NotBlank(message = "La cédula es obligatoria")
+    @NotBlank
     private String cedula;
 
-    @NotBlank(message = "El teléfono es obligatorio")
+    @NotBlank
     private String telefono;
-
-    private String nit;
 
     private String direccion;
 
-    @NotBlank(message = "El barrio es obligatorio")
+    @NotBlank
     private String barrio;
 
-    @NotBlank(message = "La localidad es obligatoria")
+    @NotBlank
     private String localidad;
+
+    private String nit;
+
+    private String representanteLegal;
 
     private String zona_de_trabajo;
 
     private String horario;
 
-    private String certificaciones;
+    private String tipoMaterial;
+
+    private Integer cantidad_minima;
 
     private String imagen_perfil;
 
-    private Integer cantidad_minima;
+    private String certificaciones;
 
     private Boolean estado;
 
     private LocalDateTime fechaCreacion;
 }
+
