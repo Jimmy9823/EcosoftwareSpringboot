@@ -37,10 +37,10 @@ public class UsuarioDTO {
 
     private String direccion;
 
-    @NotBlank
+
     private String barrio;
 
-    @NotBlank
+
     private String localidad;
 
     private String nit;

@@ -40,10 +40,10 @@ public class UsuarioEntity {
     @Column
     private String direccion;
 
-    @Column(nullable = false)
+    @Column
     private String barrio;
 
-    @Column(nullable = false)
+    @Column
     private String localidad;
 
     @Column
