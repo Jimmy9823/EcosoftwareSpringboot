@@ -1,15 +1,29 @@
 package com.EcoSoftware.Scrum6.Controller;
 
-import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
-import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
-import com.EcoSoftware.Scrum6.Service.UsuarioService;
-import jakarta.validation.Valid;
+import java.io.IOException;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
+import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
+import com.EcoSoftware.Scrum6.Service.UsuarioService;
+import com.itextpdf.text.DocumentException;
+
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/personas")
@@ -35,18 +49,21 @@ public class UsuarioController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
     }
+
     //Filtra correo por exactitud y/o coincidencia
     @GetMapping("/filtrar-correo")
     public ResponseEntity<List<UsuarioDTO>> obtenerCorreo(@RequestParam String correo) {
         List<UsuarioDTO> usuarios = usuarioService.encontrarPorCorreo(correo);
         return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
+
     //Filtra documento (NIT o CEDULA) por exactitud y/o coincidencia
     @GetMapping("/filtrar-documento")
     public ResponseEntity<List<UsuarioDTO>> obtenerDocumento(@RequestParam String documento) {
         List<UsuarioDTO> usuarios = usuarioService.encontrarPorDocumento(documento);
         return new ResponseEntity<>(usuarios, HttpStatus.OK);
     }
+
     //Filtra nombre por exactitud y/o coincidencia
     @GetMapping("/filtrar-nombre")
     public ResponseEntity<List<UsuarioDTO>> obtenerNombre(@RequestParam String nombre) {
@@ -99,6 +116,23 @@ public class UsuarioController {
         } catch (Exception e){
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
-
     }*/
+
+    // ================================
+    //  EXPORTACIONES 
+    // ================================
+
+    @GetMapping("/export/excel")
+    public void exportToExcel(HttpServletResponse response) throws IOException {
+        response.setContentType("application/vnd.ms-excel");
+        response.setHeader("Content-Disposition", "attachment; filename=usuarios.xlsx");
+        usuarioService.exportUsuariosToExcel(response.getOutputStream());
+    }
+
+    @GetMapping("/export/pdf")
+    public void exportToPDF(HttpServletResponse response) throws IOException, DocumentException {
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=usuarios.pdf");
+        usuarioService.exportUsuariosToPDF(response.getOutputStream());
+    }
 }
