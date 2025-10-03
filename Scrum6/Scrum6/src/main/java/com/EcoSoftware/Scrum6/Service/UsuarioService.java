@@ -29,8 +29,8 @@ public interface UsuarioService {
     // ================================
     //  MÉTODOS EXPORTACIÓN
     // ================================
-    void exportUsuariosToExcel(OutputStream os) throws IOException;
+    void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os) throws IOException;
 
-    void exportUsuariosToPDF(OutputStream os) throws IOException, DocumentException;
+    void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os) throws IOException, DocumentException;
 }
 

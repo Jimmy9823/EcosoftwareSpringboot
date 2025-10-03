@@ -123,16 +123,26 @@ public class UsuarioController {
     // ================================
 
     @GetMapping("/export/excel")
-    public void exportToExcel(HttpServletResponse response) throws IOException {
+    public void exportToExcel(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String correo,
+            @RequestParam(required = false) String documento,
+            HttpServletResponse response
+    ) throws IOException {
         response.setContentType("application/vnd.ms-excel");
         response.setHeader("Content-Disposition", "attachment; filename=usuarios.xlsx");
-        usuarioService.exportUsuariosToExcel(response.getOutputStream());
+        usuarioService.exportUsuariosToExcel(nombre, correo, documento, response.getOutputStream());
     }
 
     @GetMapping("/export/pdf")
-    public void exportToPDF(HttpServletResponse response) throws IOException, DocumentException {
+    public void exportToPDF(
+            @RequestParam(required = false) String nombre,
+            @RequestParam(required = false) String correo,
+            @RequestParam(required = false) String documento,
+            HttpServletResponse response
+    ) throws IOException, DocumentException {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=usuarios.pdf");
-        usuarioService.exportUsuariosToPDF(response.getOutputStream());
+        usuarioService.exportUsuariosToPDF(nombre, correo, documento, response.getOutputStream());
     }
 }

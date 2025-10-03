@@ -28,4 +28,14 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
     @Transactional
     @Query("UPDATE UsuarioEntity u SET u.estado = false WHERE u.idUsuario = :id")
     int eliminacionLogica(@Param("id") Long id);
+
+    @Query("SELECT u FROM UsuarioEntity u " +
+            "WHERE u.estado = true " +
+            "AND (:nombre IS NULL OR LOWER(u.nombre) LIKE LOWER(CONCAT('%', :nombre, '%'))) " +
+            "AND (:correo IS NULL OR LOWER(u.correo) LIKE LOWER(CONCAT('%', :correo, '%'))) " +
+            "AND (:documento IS NULL OR LOWER(u.cedula) LIKE LOWER(CONCAT('%', :documento, '%')) " +
+            "OR LOWER(u.nit) LIKE LOWER(CONCAT('%', :documento, '%')))")
+    List<UsuarioEntity> findByFiltros(@Param("nombre") String nombre,
+                                      @Param("correo") String correo,
+                                      @Param("documento") String documento);
 }

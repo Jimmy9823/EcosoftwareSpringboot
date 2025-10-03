@@ -45,14 +45,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Override
     public List<UsuarioDTO> listarUsuarios() {
-        return usuarioRepository.findAll().stream().
-                map(this::convertirADTO).toList();
+        return usuarioRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
     @Override
     public UsuarioDTO obtenerUsuarioPorId(Long idUsuario) {
-        UsuarioEntity usuarioEntity = usuarioRepository.findById(idUsuario).
-                orElseThrow(() -> new RuntimeException("Persona no encontrada con ID: " + idUsuario));
+        UsuarioEntity usuarioEntity = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Persona no encontrada con ID: " + idUsuario));
         return convertirADTO(usuarioEntity);
     }
 
@@ -166,14 +168,29 @@ public class UsuarioServiceImpl implements UsuarioService {
         return modelMapper.map(usuarioEntity, UsuarioEditarDTO.class);
     }
 
+    // =====================================================
+    // 🔸 MÉTODO AUXILIAR para filtrar usuarios reutilizable
+    // =====================================================
+    private List<UsuarioDTO> obtenerUsuariosFiltrados(String nombre, String correo, String documento) {
+        if ((nombre == null || nombre.isEmpty()) &&
+                (correo == null || correo.isEmpty()) &&
+                (documento == null || documento.isEmpty())) {
+            return listarUsuarios();
+        }
+        return usuarioRepository.findByFiltros(nombre, correo, documento)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+    }
+
     // ==============================
     // Exportar usuarios a Excel
     // ==============================
-    public void exportUsuariosToExcel(OutputStream os) throws IOException {
+    @Override
+    public void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os) throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Usuarios");
 
-        // Encabezados
         String[] headers = {"ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
                 "Barrio", "Localidad", "Zona de Trabajo", "Horario", "Certificaciones",
                 "Cantidad Mínima", "Estado", "Fecha Creación"};
@@ -183,8 +200,8 @@ public class UsuarioServiceImpl implements UsuarioService {
             headerRow.createCell(i).setCellValue(headers[i]);
         }
 
-        // Datos
-        List<UsuarioDTO> usuarios = listarUsuarios();
+        List<UsuarioDTO> usuarios = obtenerUsuariosFiltrados(nombre, correo, documento);
+
         int rowNum = 1;
         for (UsuarioDTO usuario : usuarios) {
             Row row = sheet.createRow(rowNum++);
@@ -206,7 +223,6 @@ public class UsuarioServiceImpl implements UsuarioService {
             row.createCell(15).setCellValue(usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : "");
         }
 
-        // Autoajustar columnas
         for (int i = 0; i < headers.length; i++) {
             sheet.autoSizeColumn(i);
         }
@@ -218,8 +234,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     // ==============================
     // Exportar usuarios a PDF
     // ==============================
-    public void exportUsuariosToPDF(OutputStream os) throws IOException, DocumentException {
-        Document document = new Document(PageSize.A4.rotate()); // horizontal
+    @Override
+    public void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os) throws IOException, DocumentException {
+        Document document = new Document(PageSize.A4.rotate());
         PdfWriter.getInstance(document, os);
         document.open();
 
@@ -233,15 +250,14 @@ public class UsuarioServiceImpl implements UsuarioService {
         PdfPTable table = new PdfPTable(headers.length);
         table.setWidthPercentage(100);
 
-        // Encabezados
         for (String header : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(header));
             cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
             table.addCell(cell);
         }
 
-        // Datos
-        List<UsuarioDTO> usuarios = listarUsuarios();
+        List<UsuarioDTO> usuarios = obtenerUsuariosFiltrados(nombre, correo, documento);
+
         for (UsuarioDTO usuario : usuarios) {
             table.addCell(usuario.getIdUsuario() != null ? usuario.getIdUsuario().toString() : "");
             table.addCell(usuario.getRolId() != null ? usuario.getRolId().toString() : "");
@@ -265,4 +281,3 @@ public class UsuarioServiceImpl implements UsuarioService {
         document.close();
     }
 }
-
