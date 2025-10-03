@@ -32,4 +32,5 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
 
     // Buscar solicitudes por localidad y tipo de residuo
     List<SolicitudRecoleccionEntity> findByLocalidadAndTipoResiduo(Localidad localidad, TipoResiduo tipoResiduo);
+    List<SolicitudRecoleccionEntity> findByLocalidadAndEstadoPeticion(Localidad localidad, EstadoPeticion estadoPeticion);
 }

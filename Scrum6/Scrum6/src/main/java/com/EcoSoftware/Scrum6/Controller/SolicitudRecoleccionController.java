@@ -1,11 +1,18 @@
 package com.EcoSoftware.Scrum6.Controller;
 
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
-import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
+import com.itextpdf.text.DocumentException;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @RestController
@@ -13,6 +20,7 @@ import java.util.List;
 public class SolicitudRecoleccionController {
 
     private final SolicitudRecoleccionService solicitudService;
+
 
     public SolicitudRecoleccionController(SolicitudRecoleccionService solicitudService) {
         this.solicitudService = solicitudService;
@@ -66,5 +74,79 @@ public class SolicitudRecoleccionController {
 
         dto.setIdSolicitud(id); 
         return ResponseEntity.ok(solicitudService.actualizarSolicitud(dto));
+    }
+
+
+    // ===========================
+    // EXPORTACIONES
+    // ===========================
+
+    @GetMapping("/export/excel")
+    public void exportToExcel(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String localidad,
+            @RequestParam(required = false) String fechaDesde, // yyyy-MM-dd
+            @RequestParam(required = false) String fechaHasta, // yyyy-MM-dd
+            HttpServletResponse response) throws IOException {
+
+        EstadoPeticion estadoEnum = parseEstado(estado);
+        Localidad localidadEnum = parseLocalidad(localidad);
+
+        LocalDateTime inicio = parseFechaInicio(fechaDesde);
+        LocalDateTime fin = parseFechaFin(fechaHasta);
+
+        response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        response.setHeader("Content-Disposition", "attachment; filename=solicitudes.xlsx");
+        solicitudService.generarReporteExcel(estadoEnum, localidadEnum, inicio, fin, response.getOutputStream());
+    }
+
+    @GetMapping("/export/pdf")
+    public void exportToPDF(
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String localidad,
+            @RequestParam(required = false) String fechaDesde, // yyyy-MM-dd
+            @RequestParam(required = false) String fechaHasta, // yyyy-MM-dd
+            HttpServletResponse response) throws IOException, DocumentException {
+
+        EstadoPeticion estadoEnum = parseEstado(estado);
+        Localidad localidadEnum = parseLocalidad(localidad);
+
+        LocalDateTime inicio = parseFechaInicio(fechaDesde);
+        LocalDateTime fin = parseFechaFin(fechaHasta);
+
+        response.setContentType("application/pdf");
+        response.setHeader("Content-Disposition", "attachment; filename=solicitudes.pdf");
+        solicitudService.generarReportePDF(estadoEnum, localidadEnum, inicio, fin, response.getOutputStream());
+    }
+
+    // -----------------------------
+    // Helpers de parsing (case-insensitive)
+    // -----------------------------
+    private EstadoPeticion parseEstado(String estado) {
+        if (estado == null || estado.isBlank()) return null;
+        for (EstadoPeticion ep : EstadoPeticion.values()) {
+            if (ep.name().equalsIgnoreCase(estado.trim())) return ep;
+        }
+        return null;
+    }
+
+    private Localidad parseLocalidad(String localidad) {
+        if (localidad == null || localidad.isBlank()) return null;
+        for (Localidad l : Localidad.values()) {
+            if (l.name().equalsIgnoreCase(localidad.trim())) return l;
+        }
+        return null;
+    }
+
+    private LocalDateTime parseFechaInicio(String fechaDesde) {
+        if (fechaDesde == null || fechaDesde.isBlank()) return null;
+        LocalDate d = LocalDate.parse(fechaDesde); // espera yyyy-MM-dd
+        return d.atStartOfDay();
+    }
+
+    private LocalDateTime parseFechaFin(String fechaHasta) {
+        if (fechaHasta == null || fechaHasta.isBlank()) return null;
+        LocalDate d = LocalDate.parse(fechaHasta); // espera yyyy-MM-dd
+        return LocalDateTime.of(d, LocalTime.MAX); // hasta final del día
     }
 }

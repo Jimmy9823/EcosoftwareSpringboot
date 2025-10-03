@@ -2,7 +2,12 @@ package com.EcoSoftware.Scrum6.Service;
 
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.itextpdf.text.DocumentException;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface SolicitudRecoleccionService {
@@ -27,6 +32,17 @@ public interface SolicitudRecoleccionService {
 
     // Actualizar datos de la solicitud (solo si está pendiente)
     SolicitudRecoleccionDTO actualizarSolicitud(SolicitudRecoleccionDTO solicitudDTO);
+    void generarReporteExcel(EstadoPeticion estado,
+                             Localidad localidad,
+                             LocalDateTime fechaInicio,
+                             LocalDateTime fechaFin,
+                             OutputStream os) throws IOException;
+
+    void generarReportePDF(EstadoPeticion estado,
+                           Localidad localidad,
+                           LocalDateTime fechaInicio,
+                           LocalDateTime fechaFin,
+                           OutputStream os) throws IOException, DocumentException;
 }
 
 
