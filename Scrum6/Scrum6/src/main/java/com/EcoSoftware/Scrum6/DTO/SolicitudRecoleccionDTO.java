@@ -5,6 +5,7 @@ import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import lombok.Data;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 @Data
@@ -21,7 +22,7 @@ public class SolicitudRecoleccionDTO {
     private String ubicacion;
     private String evidencia;
     private OffsetDateTime fechaCreacionSolicitud;
-    private OffsetDateTime fechaProgramada;
+    private LocalDateTime fechaProgramada;
 
     private Long recoleccionId;      // Relación con la recolección generada
 }

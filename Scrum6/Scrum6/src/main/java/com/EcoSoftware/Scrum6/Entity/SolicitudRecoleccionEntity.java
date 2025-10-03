@@ -1,5 +1,6 @@
 package com.EcoSoftware.Scrum6.Entity;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
@@ -68,11 +69,10 @@ public class SolicitudRecoleccionEntity {
 
     @Column(name = "fecha_programada", nullable = false)
     @NotNull(message = "La fecha programada es obligatoria")
-    private OffsetDateTime fechaProgramada;
+    private LocalDateTime fechaProgramada;
 
     // Relación con la recolección generada (si llega a aceptarse)
-    @OneToOne(mappedBy = "solicitud")
+    @OneToOne(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private RecoleccionEntity recoleccion;
+
 }
-
-

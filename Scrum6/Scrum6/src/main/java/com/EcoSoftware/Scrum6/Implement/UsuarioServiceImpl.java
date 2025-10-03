@@ -1,5 +1,19 @@
 package com.EcoSoftware.Scrum6.Implement;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
@@ -7,13 +21,15 @@ import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.UsuarioService;
-import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.DocumentException;
+import com.itextpdf.text.PageSize;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 
 @Service
 public class UsuarioServiceImpl implements UsuarioService {
@@ -40,8 +56,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         return convertirADTO(usuarioEntity);
     }
 
-
-
     @Override
     public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
         if (usuarioDTO.getRolId() == null) {
@@ -50,12 +64,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
         UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
 
-        // Rol obligatorio
         RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
         entity.setRol(rol);
 
-        // Valores por defecto si no vienen de Angular
         if (entity.getEstado() == null) {
             entity.setEstado(true);
         }
@@ -69,7 +81,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         UsuarioEntity saved = usuarioRepository.save(entity);
         return modelMapper.map(saved, UsuarioDTO.class);
     }
-
 
     @Override
     public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {
@@ -105,7 +116,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         }
     }
 
-    //Busca por exactitud
     @Override
     public List<UsuarioDTO> encontrarPorNombre(String nombre) {
         Optional<UsuarioEntity> reExactos = usuarioRepository.findByNombreAndEstadoTrue(nombre);
@@ -148,10 +158,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         return buscarCorreo.stream().map(this::convertirADTO).toList();
     }
 
-    /*private UsuarioEntity convertirAEntity(UsuarioDTO dto) {
-        return modelMapper.map(dto, UsuarioEntity.class);
-    }*/
-
     public UsuarioDTO convertirADTO(UsuarioEntity usuarioEntity) {
         return modelMapper.map(usuarioEntity, UsuarioDTO.class);
     }
@@ -160,4 +166,103 @@ public class UsuarioServiceImpl implements UsuarioService {
         return modelMapper.map(usuarioEntity, UsuarioEditarDTO.class);
     }
 
+    // ==============================
+    // Exportar usuarios a Excel
+    // ==============================
+    public void exportUsuariosToExcel(OutputStream os) throws IOException {
+        Workbook workbook = new XSSFWorkbook();
+        Sheet sheet = workbook.createSheet("Usuarios");
+
+        // Encabezados
+        String[] headers = {"ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
+                "Barrio", "Localidad", "Zona de Trabajo", "Horario", "Certificaciones",
+                "Cantidad Mínima", "Estado", "Fecha Creación"};
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < headers.length; i++) {
+            headerRow.createCell(i).setCellValue(headers[i]);
+        }
+
+        // Datos
+        List<UsuarioDTO> usuarios = listarUsuarios();
+        int rowNum = 1;
+        for (UsuarioDTO usuario : usuarios) {
+            Row row = sheet.createRow(rowNum++);
+            row.createCell(0).setCellValue(usuario.getIdUsuario());
+            row.createCell(1).setCellValue(usuario.getRolId() != null ? usuario.getRolId() : 0);
+            row.createCell(2).setCellValue(usuario.getNombre());
+            row.createCell(3).setCellValue(usuario.getCorreo());
+            row.createCell(4).setCellValue(usuario.getCedula());
+            row.createCell(5).setCellValue(usuario.getTelefono());
+            row.createCell(6).setCellValue(usuario.getNit() != null ? usuario.getNit() : "");
+            row.createCell(7).setCellValue(usuario.getDireccion() != null ? usuario.getDireccion() : "");
+            row.createCell(8).setCellValue(usuario.getBarrio());
+            row.createCell(9).setCellValue(usuario.getLocalidad());
+            row.createCell(10).setCellValue(usuario.getZona_de_trabajo() != null ? usuario.getZona_de_trabajo() : "");
+            row.createCell(11).setCellValue(usuario.getHorario() != null ? usuario.getHorario() : "");
+            row.createCell(12).setCellValue(usuario.getCertificaciones() != null ? usuario.getCertificaciones() : "");
+            row.createCell(13).setCellValue(usuario.getCantidad_minima() != null ? usuario.getCantidad_minima() : 0);
+            row.createCell(14).setCellValue(usuario.getEstado() != null && usuario.getEstado() ? "Activo" : "Inactivo");
+            row.createCell(15).setCellValue(usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : "");
+        }
+
+        // Autoajustar columnas
+        for (int i = 0; i < headers.length; i++) {
+            sheet.autoSizeColumn(i);
+        }
+
+        workbook.write(os);
+        workbook.close();
+    }
+
+    // ==============================
+    // Exportar usuarios a PDF
+    // ==============================
+    public void exportUsuariosToPDF(OutputStream os) throws IOException, DocumentException {
+        Document document = new Document(PageSize.A4.rotate()); // horizontal
+        PdfWriter.getInstance(document, os);
+        document.open();
+
+        document.add(new Paragraph("Reporte de Usuarios"));
+        document.add(new Paragraph(" "));
+
+        String[] headers = {"ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
+                "Barrio", "Localidad", "Zona de Trabajo", "Horario", "Certificaciones",
+                "Cantidad Mínima", "Estado", "Fecha Creación"};
+
+        PdfPTable table = new PdfPTable(headers.length);
+        table.setWidthPercentage(100);
+
+        // Encabezados
+        for (String header : headers) {
+            PdfPCell cell = new PdfPCell(new Phrase(header));
+            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            table.addCell(cell);
+        }
+
+        // Datos
+        List<UsuarioDTO> usuarios = listarUsuarios();
+        for (UsuarioDTO usuario : usuarios) {
+            table.addCell(usuario.getIdUsuario() != null ? usuario.getIdUsuario().toString() : "");
+            table.addCell(usuario.getRolId() != null ? usuario.getRolId().toString() : "");
+            table.addCell(usuario.getNombre());
+            table.addCell(usuario.getCorreo());
+            table.addCell(usuario.getCedula());
+            table.addCell(usuario.getTelefono());
+            table.addCell(usuario.getNit() != null ? usuario.getNit() : "");
+            table.addCell(usuario.getDireccion() != null ? usuario.getDireccion() : "");
+            table.addCell(usuario.getBarrio());
+            table.addCell(usuario.getLocalidad());
+            table.addCell(usuario.getZona_de_trabajo() != null ? usuario.getZona_de_trabajo() : "");
+            table.addCell(usuario.getHorario() != null ? usuario.getHorario() : "");
+            table.addCell(usuario.getCertificaciones() != null ? usuario.getCertificaciones() : "");
+            table.addCell(usuario.getCantidad_minima() != null ? usuario.getCantidad_minima().toString() : "");
+            table.addCell(usuario.getEstado() != null && usuario.getEstado() ? "Activo" : "Inactivo");
+            table.addCell(usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : "");
+        }
+
+        document.add(table);
+        document.close();
+    }
 }
+

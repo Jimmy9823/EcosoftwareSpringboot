@@ -1,5 +1,6 @@
 package com.EcoSoftware.Scrum6.Entity;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import jakarta.persistence.*;
@@ -36,10 +37,10 @@ public class RecoleccionEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EstadoRecoleccion estado = EstadoRecoleccion.Pendiente;
+    private EstadoRecoleccion estado = EstadoRecoleccion.En_Progreso;
 
     @Column(name = "fecha_recoleccion")
-    private OffsetDateTime fechaRecoleccion;
+    private LocalDateTime fechaRecoleccion;
 
     @Column(columnDefinition = "TEXT")
     private String observaciones;
