@@ -1,13 +1,16 @@
 package com.EcoSoftware.Scrum6.Implement;
 
 import com.EcoSoftware.Scrum6.Entity.RutaRecoleccionEntity;
+import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Repository.RutaRecoleccionRepository;
+import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.RutaRecoleccionService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
 
@@ -16,9 +19,20 @@ import java.util.Optional;
 public class RutaRecoleccionServiceImpl implements RutaRecoleccionService {
 
     private final RutaRecoleccionRepository rutaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @Override
     public RutaRecoleccionEntity crearRuta(RutaRecoleccionEntity ruta) {
+        // ✅ Obtener el usuario logueado desde el token
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String correoUsuario = auth.getName();
+
+        UsuarioEntity usuario = usuarioRepository.findByCorreo(correoUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Asignar el usuario como recolector o creador de la ruta
+        ruta.setRecolector(usuario);
+
         return rutaRepository.save(ruta);
     }
 

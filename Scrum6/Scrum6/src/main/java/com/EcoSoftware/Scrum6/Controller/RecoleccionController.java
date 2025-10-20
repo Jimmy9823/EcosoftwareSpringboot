@@ -2,10 +2,14 @@ package com.EcoSoftware.Scrum6.Controller;
 
 import com.EcoSoftware.Scrum6.DTO.RecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
+import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion;
+import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.RecoleccionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,8 +21,12 @@ import java.util.stream.Collectors;
 public class RecoleccionController {
 
     private final RecoleccionService recoleccionService;
+    private final UsuarioRepository usuarioRepository;
 
-    // Obtener una recolección por ID
+    // ========================================================
+    // OBTENER RECOLECCIÓN POR ID
+    // ========================================================
+    // Devuelve una recolección específica según su ID
     @GetMapping("/{id}")
     public ResponseEntity<RecoleccionDTO> obtenerPorId(@PathVariable Long id) {
         return recoleccionService.obtenerPorId(id)
@@ -26,7 +34,10 @@ public class RecoleccionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    // Listar todas las recolecciones activas (no canceladas)
+    // ========================================================
+    // LISTAR TODAS LAS RECOLECCIONES ACTIVAS
+    // ========================================================
+    // Devuelve todas las recolecciones cuyo estado no sea Cancelada
     @GetMapping("/activas")
     public ResponseEntity<List<RecoleccionDTO>> listarActivas() {
         return ResponseEntity.ok(
@@ -36,17 +47,29 @@ public class RecoleccionController {
         );
     }
 
-    // Listar recolecciones de un recolector
-    @GetMapping("/recolector/{id}")
-    public ResponseEntity<List<RecoleccionDTO>> listarPorRecolector(@PathVariable Long id) {
+    // ========================================================
+    // LISTAR RECOLECCIONES DEL RECOLECTOR AUTENTICADO
+    // ========================================================
+    // Obtiene las recolecciones asignadas al usuario actualmente logueado
+    @GetMapping("/mis-recolecciones")
+    public ResponseEntity<List<RecoleccionDTO>> listarPorRecolector() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String correo = auth.getName();
+
+        UsuarioEntity recolector = usuarioRepository.findByCorreoAndEstadoTrue(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado o inactivo"));
+
         return ResponseEntity.ok(
-                recoleccionService.listarPorRecolector(id).stream()
+                recoleccionService.listarPorRecolector(recolector.getIdUsuario()).stream()
                         .map(this::toDto)
                         .collect(Collectors.toList())
         );
     }
 
-    // Listar recolecciones de una ruta
+    // ========================================================
+    // LISTAR RECOLECCIONES POR RUTA
+    // ========================================================
+    // Devuelve todas las recolecciones asignadas a una ruta específica
     @GetMapping("/ruta/{id}")
     public ResponseEntity<List<RecoleccionDTO>> listarPorRuta(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -56,7 +79,10 @@ public class RecoleccionController {
         );
     }
 
-    // Actualizar estado de una recolección
+    // ========================================================
+    // ACTUALIZAR ESTADO DE UNA RECOLECCIÓN
+    // ========================================================
+    // Permite cambiar el estado de la recolección a Pendiente, Completada, etc.
     @PutMapping("/{id}/estado")
     public ResponseEntity<RecoleccionDTO> actualizarEstado(
             @PathVariable Long id,
@@ -66,7 +92,10 @@ public class RecoleccionController {
         return ResponseEntity.ok(toDto(actualizadaEstado));
     }
 
-    // Actualizar recolección
+    // ========================================================
+    // ACTUALIZAR RECOLECCIÓN
+    // ========================================================
+    // Modifica los campos permitidos de una recolección por el recolector asignado
     @PutMapping("/{id}")
     public ResponseEntity<RecoleccionDTO> actualizarRecoleccion(
             @PathVariable Long id,
@@ -76,15 +105,20 @@ public class RecoleccionController {
         return ResponseEntity.ok(toDto(actualizar));
     }
 
-
-    // Eliminar lógicamente (cambiar estado a Cancelada)
+    // ========================================================
+    // ELIMINAR RECOLECCIÓN (LÓGICAMENTE)
+    // ========================================================
+    // Marca la recolección como Cancelada sin eliminarla físicamente
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarLogicamente(@PathVariable Long id) {
         recoleccionService.eliminarLogicamente(id);
         return ResponseEntity.noContent().build();
     }
 
-    // Mapper Entity → DTO
+    // ========================================================
+    // MAPPER ENTITY → DTO
+    // ========================================================
+    // Convierte una entidad Recolección a su DTO correspondiente
     private RecoleccionDTO toDto(RecoleccionEntity r) {
         RecoleccionDTO dto = new RecoleccionDTO();
         dto.setIdRecoleccion(r.getIdRecoleccion());

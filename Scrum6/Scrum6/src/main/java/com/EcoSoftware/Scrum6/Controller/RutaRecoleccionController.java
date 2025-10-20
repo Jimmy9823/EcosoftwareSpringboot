@@ -18,10 +18,11 @@ public class RutaRecoleccionController {
     private final RutaRecoleccionService rutaService;
 
     @PostMapping
-    public ResponseEntity<RutaRecoleccionDTO> crear(@RequestBody RutaRecoleccionEntity ruta) {
-        RutaRecoleccionEntity saved = rutaService.crearRuta(ruta);
-        return ResponseEntity.ok(toDto(saved));
-    }
+public ResponseEntity<RutaRecoleccionDTO> crear(@RequestBody RutaRecoleccionEntity ruta) {
+    RutaRecoleccionEntity saved = rutaService.crearRuta(ruta);
+    return ResponseEntity.ok(toDto(saved));
+}
+
 
     @GetMapping("/{id}")
     public ResponseEntity<RutaRecoleccionDTO> obtenerPorId(@PathVariable Long id) {

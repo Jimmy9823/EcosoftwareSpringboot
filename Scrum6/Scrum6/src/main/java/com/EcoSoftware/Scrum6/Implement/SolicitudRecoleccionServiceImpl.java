@@ -108,11 +108,11 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // ==========================================================
     @Override
     public SolicitudRecoleccionDTO crearSolicitudConUsuario(SolicitudRecoleccionDTO dto, String correoUsuario) {
-        // 1️⃣ Buscar usuario que hace la solicitud
+        // 1️. Buscar usuario que hace la solicitud
         UsuarioEntity usuario = usuarioRepository.findByCorreo(correoUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con el correo: " + correoUsuario));
 
-        // 2️⃣ Crear y configurar la entidad
+        // 2️. Crear y configurar la entidad
         SolicitudRecoleccionEntity entity = new SolicitudRecoleccionEntity();
         entity.setUsuario(usuario);
         entity.setTipoResiduo(dto.getTipoResiduo());
@@ -125,7 +125,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         entity.setEstadoPeticion(EstadoPeticion.Pendiente);
         entity.setFechaCreacionSolicitud(OffsetDateTime.now());
 
-        // 3️⃣ Guardar en BD
+        // 3️. Guardar en BD
         SolicitudRecoleccionEntity saved = solicitudRepository.save(entity);
         return entityToDTO(saved);
     }
@@ -165,28 +165,28 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // ==========================================================
     @Override
     public SolicitudRecoleccionDTO aceptarSolicitud(Long solicitudId) {
-        // 1️⃣ Buscar solicitud
+        // 1️. Buscar solicitud
         SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(solicitudId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-        // 2️⃣ Validar que esté pendiente
+        // 2️. Validar que esté pendiente
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden aceptar solicitudes pendientes");
         }
 
-        // 3️⃣ Obtener recolector desde el contexto de seguridad (token)
+        // 3️. Obtener recolector desde el contexto de seguridad (token)
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String correoRecolector = auth.getName();
 
-        // 4️⃣ Buscar recolector en BD
+        // 4️. Buscar recolector en BD
         UsuarioEntity recolector = usuarioRepository.findByCorreo(correoRecolector)
                 .orElseThrow(() -> new RuntimeException("Recolector no encontrado"));
 
-        // 5️⃣ Actualizar solicitud
+        // 5️. Actualizar solicitud
         solicitud.setAceptadaPor(recolector);
         solicitud.setEstadoPeticion(EstadoPeticion.Aceptada);
 
-        // 6️⃣ Crear recolección asociada
+        // 6️. Crear recolección asociada
         RecoleccionEntity recoleccion = new RecoleccionEntity();
         recoleccion.setSolicitud(solicitud);
         recoleccion.setRecolector(recolector);
@@ -197,7 +197,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         solicitud.setRecoleccion(recoleccion);
 
-        // 7️⃣ Guardar cambios
+        // 7️. Guardar cambios
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
         return entityToDTO(saved);
     }
@@ -223,25 +223,25 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // ==========================================================
     @Override
     public SolicitudRecoleccionDTO actualizarSolicitudConUsuario(SolicitudRecoleccionDTO dto, String correoUsuario) {
-        // 1️⃣ Buscar usuario logueado
+        // 1️. Buscar usuario logueado
         UsuarioEntity usuario = usuarioRepository.findByCorreo(correoUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con el correo: " + correoUsuario));
 
-        // 2️⃣ Buscar solicitud
+        // 2️. Buscar solicitud
         SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(dto.getIdSolicitud())
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-        // 3️⃣ Validar propiedad
+        // 3️. Validar propiedad
         if (!solicitud.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
             throw new RuntimeException("No tienes permiso para modificar esta solicitud");
         }
 
-        // 4️⃣ Validar estado
+        // 4️. Validar estado
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden actualizar solicitudes pendientes");
         }
 
-        // 5️⃣ Actualizar campos
+        // 5️. Actualizar campos
         solicitud.setTipoResiduo(dto.getTipoResiduo());
         solicitud.setCantidad(dto.getCantidad());
         solicitud.setDescripcion(dto.getDescripcion());
@@ -262,7 +262,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             LocalDateTime fechaInicio,
             LocalDateTime fechaFin) {
 
-        // 1️⃣ Consultar según filtros
+        // 1️. Consultar según filtros
         List<SolicitudRecoleccionEntity> entities;
         if (estado != null && localidad != null) {
             entities = solicitudRepository.findByLocalidadAndEstadoPeticion(localidad, estado);
@@ -274,12 +274,12 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             entities = solicitudRepository.findAll();
         }
 
-        // 2️⃣ Convertir a DTO
+        // 2️. Convertir a DTO
         List<SolicitudRecoleccionDTO> dtos = entities.stream()
                 .map(this::entityToDTO)
                 .collect(Collectors.toList());
 
-        // 3️⃣ Filtrar por fechas (opcional)
+        // 3️. Filtrar por fechas (opcional)
         if (fechaInicio == null && fechaFin == null) return dtos;
 
         return dtos.stream().filter(dto -> {
@@ -317,25 +317,25 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             LocalDateTime fechaFin,
             OutputStream os) throws IOException {
 
-        // 1️⃣ Obtener datos filtrados
+        // 1️. Obtener datos filtrados
         List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
 
-        // 2️⃣ Crear libro de Excel
+        // 2️. Crear libro de Excel
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Solicitudes");
 
-        // 3️⃣ Definir encabezados
+        // 3️. Definir encabezados
         String[] headers = { "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
                 "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", "Evidencia",
                 "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" };
 
-        // 4️⃣ Crear fila de encabezado
+        // 4️. Crear fila de encabezado
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
             headerRow.createCell(i).setCellValue(headers[i]);
         }
 
-        // 5️⃣ Llenar filas con datos
+        // 5️. Llenar filas con datos
         int rowNum = 1;
         for (SolicitudRecoleccionDTO s : solicitudes) {
             Row row = sheet.createRow(rowNum++);
@@ -355,12 +355,12 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             row.createCell(12).setCellValue(s.getRecoleccionId() != null ? s.getRecoleccionId() : 0);
         }
 
-        // 6️⃣ Ajustar ancho de columnas
+        // 6️. Ajustar ancho de columnas
         for (int i = 0; i < headers.length; i++) {
             sheet.autoSizeColumn(i);
         }
 
-        // 7️⃣ Escribir en flujo de salida
+        // 7️. Escribir en flujo de salida
         workbook.write(os);
         workbook.close();
     }
@@ -375,19 +375,19 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             LocalDateTime fechaFin,
             OutputStream os) throws IOException, DocumentException {
 
-        // 1️⃣ Obtener datos filtrados
+        // 1️. Obtener datos filtrados
         List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
 
-        // 2️⃣ Configurar documento PDF
+        // 2️. Configurar documento PDF
         Document document = new Document(PageSize.A4.rotate());
         PdfWriter.getInstance(document, os);
         document.open();
 
-        // 3️⃣ Título
+        // 3️. Título
         document.add(new Paragraph("Reporte de Solicitudes"));
         document.add(new Paragraph(" "));
 
-        // 4️⃣ Encabezados de tabla
+        // 4️. Encabezados de tabla
         String[] headers = { "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
                 "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion",
                 "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" };
@@ -395,14 +395,14 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         PdfPTable table = new PdfPTable(headers.length);
         table.setWidthPercentage(100);
 
-        // 5️⃣ Crear celdas de encabezado
+        // 5️. Crear celdas de encabezado
         for (String header : headers) {
             PdfPCell cell = new PdfPCell(new Phrase(header));
             cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
             table.addCell(cell);
         }
 
-        // 6️⃣ Llenar filas con datos
+        // 6️. Llenar filas con datos
         for (SolicitudRecoleccionDTO s : solicitudes) {
             table.addCell(s.getIdSolicitud() != null ? s.getIdSolicitud().toString() : "");
             table.addCell(s.getUsuarioId() != null ? s.getUsuarioId().toString() : "");
@@ -418,7 +418,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             table.addCell(s.getRecoleccionId() != null ? s.getRecoleccionId().toString() : "");
         }
 
-        // 7️⃣ Agregar tabla al documento
+        // 7️. Agregar tabla al documento
         document.add(table);
         document.close();
     }

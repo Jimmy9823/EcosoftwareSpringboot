@@ -20,6 +20,10 @@ public class RecoleccionServiceImpl implements RecoleccionService {
 
     private final RecoleccionRepository recoleccionRepository;
 
+    // ========================================================
+    // OBTENER RECOLECCIÓN POR ID
+    // ========================================================
+    // Devuelve una recolección activa por su ID, lanza excepción si está cancelada
     @Override
     public Optional<RecoleccionEntity> obtenerPorId(Long id) {
         return recoleccionRepository.findById(id)
@@ -31,24 +35,37 @@ public class RecoleccionServiceImpl implements RecoleccionService {
                 });
     }
 
-
-
+    // ========================================================
+    // LISTAR TODAS LAS RECOLECCIONES ACTIVAS
+    // ========================================================
+    // Devuelve todas las recolecciones que no estén canceladas
     @Override
     public List<RecoleccionEntity> listarActivas() {
-        // Usa el repo que filtra por estado != Cancelada
         return recoleccionRepository.findByEstadoNot(EstadoRecoleccion.Cancelada);
     }
 
+    // ========================================================
+    // LISTAR RECOLECCIONES POR RECOLECTOR
+    // ========================================================
+    // Lista recolecciones activas asignadas a un recolector específico
     @Override
     public List<RecoleccionEntity> listarPorRecolector(Long recolectorId) {
         return recoleccionRepository.findByRecolector_IdUsuarioAndEstadoNot(recolectorId, EstadoRecoleccion.Cancelada);
     }
 
+    // ========================================================
+    // LISTAR RECOLECCIONES POR RUTA
+    // ========================================================
+    // Lista recolecciones activas asociadas a una ruta determinada
     @Override
     public List<RecoleccionEntity> listarPorRuta(Long rutaId) {
         return recoleccionRepository.findByRuta_IdRutaAndEstadoNot(rutaId, EstadoRecoleccion.Cancelada);
     }
 
+    // ========================================================
+    // ACTUALIZAR ESTADO DE UNA RECOLECCIÓN
+    // ========================================================
+    // Cambia el estado de una recolección a un nuevo estado
     @Override
     @Transactional
     public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
@@ -59,13 +76,16 @@ public class RecoleccionServiceImpl implements RecoleccionService {
         return recoleccionRepository.save(recoleccion);
     }
 
+    // ========================================================
+    // ACTUALIZAR DATOS DE UNA RECOLECCIÓN
+    // ========================================================
+    // Actualiza campos que el recolector puede modificar
     @Override
     @Transactional
     public RecoleccionEntity actualizarRecoleccion(Long id, RecoleccionDTO dto) {
         RecoleccionEntity recoleccion = recoleccionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
 
-        // Solo actualizamos lo que el recolector puede modificar
         if (dto.getObservaciones() != null) {
             recoleccion.setObservaciones(dto.getObservaciones());
         }
@@ -76,13 +96,16 @@ public class RecoleccionServiceImpl implements RecoleccionService {
             recoleccion.setFechaRecoleccion(dto.getFechaRecoleccion());
         }
         if (dto.getEstado() != null) {
-            recoleccion.setEstado(dto.getEstado()); // Pendiente, Completada, etc.
+            recoleccion.setEstado(dto.getEstado());
         }
 
         return recoleccionRepository.save(recoleccion);
     }
 
-
+    // ========================================================
+    // ELIMINAR RECOLECCIÓN (LÓGICAMENTE)
+    // ========================================================
+    // Marca una recolección como cancelada sin eliminarla físicamente
     @Override
     @Transactional
     public void eliminarLogicamente(Long recoleccionId) {
@@ -93,4 +116,3 @@ public class RecoleccionServiceImpl implements RecoleccionService {
         recoleccionRepository.save(recoleccion);
     }
 }
-
