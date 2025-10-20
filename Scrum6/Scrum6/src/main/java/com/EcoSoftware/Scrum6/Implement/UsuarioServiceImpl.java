@@ -12,6 +12,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
@@ -43,6 +44,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Autowired
     private ModelMapper modelMapper;
 
+    @Autowired
+private PasswordEncoder passwordEncoder;
+
+
+
     @Override
     public List<UsuarioDTO> listarUsuarios() {
         return usuarioRepository.findAll()
@@ -59,30 +65,40 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     @Override
-    public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
-        if (usuarioDTO.getRolId() == null) {
-            throw new RuntimeException("El rol es obligatorio");
-        }
-
-        UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
-
-        RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
-        entity.setRol(rol);
-
-        if (entity.getEstado() == null) {
-            entity.setEstado(true);
-        }
-        if (entity.getFechaCreacion() == null) {
-            entity.setFechaCreacion(LocalDateTime.now());
-        }
-        if (entity.getFechaActualizacion() == null) {
-            entity.setFechaActualizacion(LocalDateTime.now());
-        }
-
-        UsuarioEntity saved = usuarioRepository.save(entity);
-        return modelMapper.map(saved, UsuarioDTO.class);
+public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
+    if (usuarioDTO.getRolId() == null) {
+        throw new RuntimeException("El rol es obligatorio");
     }
+
+    // Mapear el DTO a la entidad
+    UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
+
+    // Buscar el rol
+    RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
+            .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
+    entity.setRol(rol);
+
+    // Cifrar la contraseña antes de guardar
+    entity.setContrasena(passwordEncoder.encode(usuarioDTO.getContrasena()));
+
+    // Asignar valores por defecto
+    if (entity.getEstado() == null) {
+        entity.setEstado(true);
+    }
+    if (entity.getFechaCreacion() == null) {
+        entity.setFechaCreacion(LocalDateTime.now());
+    }
+    entity.setFechaActualizacion(LocalDateTime.now());
+
+    // Guardar el usuario
+    UsuarioEntity saved = usuarioRepository.save(entity);
+
+    // Devolver el DTO sin exponer la contraseña
+    UsuarioDTO result = modelMapper.map(saved, UsuarioDTO.class);
+    result.setContrasena(null); // 👈 Importante: no devolver contraseñas
+    return result;
+}
+
 
     @Override
     public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {

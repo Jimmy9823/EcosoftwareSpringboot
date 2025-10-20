@@ -24,6 +24,9 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
     Optional<UsuarioEntity> findByCorreoAndEstadoTrue(String correo);
 
     List<UsuarioEntity> findByCorreoContainingIgnoreCaseAndEstadoTrue(String correo);
+
+    Optional<UsuarioEntity> findByCorreo(String correo);
+
     @Modifying
     @Transactional
     @Query("UPDATE UsuarioEntity u SET u.estado = false WHERE u.idUsuario = :id")
