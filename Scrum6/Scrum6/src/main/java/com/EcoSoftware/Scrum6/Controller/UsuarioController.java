@@ -2,6 +2,7 @@ package com.EcoSoftware.Scrum6.Controller;
 
 import java.io.IOException;
 import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +34,7 @@ public class UsuarioController {
     public ResponseEntity<String> testPublic() {
         return ResponseEntity.ok("Endpoint público funciona OK");
     }
+
 
     //Trae todos los usuarios registrados al cargar el modulo usuarios
     @GetMapping
@@ -74,6 +76,7 @@ public class UsuarioController {
     }
 
     //Registra un nuevo usuario
+
     @PostMapping("/registro")
     public ResponseEntity<UsuarioDTO> insertarUsuario(@Valid @RequestBody UsuarioDTO usuario) {
         try {
@@ -120,12 +123,12 @@ public class UsuarioController {
         return ResponseEntity.ok("Usuario eliminado");
         } catch (Exception e){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }*/
 
+    }*/
     // ================================
     // EXPORTACIONES
     // ================================
+
     @GetMapping("/export/excel")
     public void exportToExcel(
             @RequestParam(required = false) String nombre,
@@ -149,4 +152,6 @@ public class UsuarioController {
         response.setHeader("Content-Disposition", "attachment; filename=usuarios.pdf");
         usuarioService.exportUsuariosToPDF(nombre, correo, documento, response.getOutputStream());
     }
+
 }
+

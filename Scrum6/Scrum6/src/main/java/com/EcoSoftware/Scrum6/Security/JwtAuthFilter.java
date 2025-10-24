@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
@@ -21,6 +22,7 @@ import java.util.Collections;
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     @Autowired
+
     private TokenJWT tokenJWT;
 
     @Autowired
@@ -46,6 +48,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+
 
         // Para otras rutas, verificar token
         String authHeader = request.getHeader("Authorization");
@@ -96,3 +99,4 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
+

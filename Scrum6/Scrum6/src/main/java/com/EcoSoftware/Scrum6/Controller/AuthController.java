@@ -8,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -38,6 +37,7 @@ public class AuthController {
                     .body(Map.of("error", "Correo no registrado o usuario inactivo"));
         }
 
+
         UsuarioEntity usuario = usuarioOpt.get();
 
         if (!passwordEncoder.matches(contrasena, usuario.getContrasena())) {
@@ -56,3 +56,4 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 }
+

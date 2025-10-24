@@ -11,6 +11,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/roles")
+
 public class RolController {
 
     @Autowired
@@ -25,6 +26,7 @@ public class RolController {
 
     // Crear un nuevo rol
     @PostMapping("/crear")
+
     public ResponseEntity<RolDTO> crearRol(@RequestBody RolDTO rolDTO) {
         RolDTO nuevoRol = rolService.crearRol(rolDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoRol);
