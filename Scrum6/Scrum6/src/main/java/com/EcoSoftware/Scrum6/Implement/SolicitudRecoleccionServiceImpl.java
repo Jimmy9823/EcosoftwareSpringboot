@@ -1,32 +1,32 @@
 package com.EcoSoftware.Scrum6.Implement;
 
-import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
-import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
-import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
-import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
-import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
-import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
-import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
-import com.EcoSoftware.Scrum6.Enums.Localidad;
-import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
-
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.security.core.Authentication;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
+import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
+import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
+import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
+import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
+import com.EcoSoftware.Scrum6.Service.EmailService;
+import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -48,19 +48,20 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
+    private final EmailService emailService;
 
-    // Constructor que inyecta los repositorios necesarios
-    public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository,
-            UsuarioRepository usuarioRepository) {
+    public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository, UsuarioRepository usuarioRepository, EmailService emailService) {
         this.solicitudRepository = solicitudRepository;
         this.usuarioRepository = usuarioRepository;
+        this.emailService = emailService;
     }
 
-    // ==========================================================
-    // Conversión entre Entity ↔ DTO
-    // ==========================================================
+    /**
+     * Convierte una entidad de SolicitudRecoleccionEntity a SolicitudRecoleccionDTO.
+     * @param entity La entidad a convertir.
+     * @return El DTO resultante.
+     */
     private SolicitudRecoleccionDTO entityToDTO(SolicitudRecoleccionEntity entity) {
-        // Convierte una entidad en su versión DTO para transportar datos al frontend
         SolicitudRecoleccionDTO dto = new SolicitudRecoleccionDTO();
         dto.setIdSolicitud(entity.getIdSolicitud());
         dto.setUsuarioId(entity.getUsuario().getIdUsuario());
@@ -78,41 +79,58 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return dto;
     }
 
-    private SolicitudRecoleccionEntity dtoToEntity(SolicitudRecoleccionDTO dto) {
-        // Convierte un DTO en una entidad para guardar en base de datos
-        SolicitudRecoleccionEntity entity = new SolicitudRecoleccionEntity();
-
-        UsuarioEntity usuario = usuarioRepository.findById(dto.getUsuarioId())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-        entity.setUsuario(usuario);
-
-        if (dto.getAceptadaPorId() != null) {
-            UsuarioEntity aceptadaPor = usuarioRepository.findById(dto.getAceptadaPorId())
-                    .orElseThrow(() -> new RuntimeException("Usuario aceptador no encontrado"));
-            entity.setAceptadaPor(aceptadaPor);
+    // ==========================================================
+    // Lógica para Correo Masivo (Método auxiliar)
+    // ==========================================================
+    
+    /**
+     * Notifica a todos los usuarios con rol 'RECICLADOR' sobre una nueva solicitud pendiente.
+     * Se ajusta para usar findAll() y filtrar en memoria, sin modificar UsuarioRepository.
+     */
+    private void notificarRecicladoresNuevaSolicitud(SolicitudRecoleccionEntity nuevaSolicitud) {
+        // 1. Obtener la lista de correos de los recicladores (Filtrando después de obtener todos)
+        List<String> correosRecicladores;
+        
+        try {
+            // Obtenemos todos los usuarios y filtramos aquellos cuyo rol sea "RECICLADOR"
+            // Asume que UsuarioEntity.getRol().getNombre() existe y devuelve el nombre del rol como String.
+            correosRecicladores = usuarioRepository.findAll().stream()
+                                                    .filter(u -> u.getRol() != null && "RECICLADOR".equals(u.getRol().getNombre()))
+                                                    .map(UsuarioEntity::getCorreo)
+                                                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            // Se captura cualquier error al acceder a la relación Rol o al campo nombre
+            System.err.println("ERROR al obtener lista de recicladores para notificación masiva. Revise si la entidad UsuarioEntity tiene la relación correcta a RolEntity y si el campo del nombre del rol es 'nombre'. Mensaje: " + e.getMessage());
+            return;
         }
 
-        entity.setTipoResiduo(dto.getTipoResiduo());
-        entity.setCantidad(dto.getCantidad());
-        entity.setDescripcion(dto.getDescripcion());
-        entity.setLocalidad(dto.getLocalidad());
-        entity.setUbicacion(dto.getUbicacion());
-        entity.setEvidencia(dto.getEvidencia());
-        entity.setFechaProgramada(dto.getFechaProgramada());
+        if (correosRecicladores.isEmpty()) {
+            System.out.println("No hay recicladores registrados para notificar.");
+            return;
+        }
 
-        return entity;
+        String asunto = " ¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
+        String contenido = "Hola Reciclador,\n\n"
+                + "Se ha registrado una **nueva solicitud de recolección pendiente** que requiere tu atención:\n"
+                + " Tipo de residuo: " + nuevaSolicitud.getTipoResiduo() + "\n"
+                + " Localidad: " + nuevaSolicitud.getLocalidad() + "\n"
+                + " Fecha programada: " + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A") + "\n"
+                + " Por favor, accede al sistema para revisar y aceptar la solicitud.\n\n"
+                + "EcoSoftware - Gestión de Residuos";
+
+        // 2. Usar el servicio de envío masivo
+        emailService.enviarCorreosMasivos(correosRecicladores, asunto, contenido);
     }
 
     // ==========================================================
-    // Crear solicitud asociada al usuario logueado
+    // Métodos CRUD
     // ==========================================================
+
     @Override
     public SolicitudRecoleccionDTO crearSolicitudConUsuario(SolicitudRecoleccionDTO dto, String correoUsuario) {
-        // 1️. Buscar usuario que hace la solicitud
         UsuarioEntity usuario = usuarioRepository.findByCorreo(correoUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con el correo: " + correoUsuario));
 
-        // 2️. Crear y configurar la entidad
         SolicitudRecoleccionEntity entity = new SolicitudRecoleccionEntity();
         entity.setUsuario(usuario);
         entity.setTipoResiduo(dto.getTipoResiduo());
@@ -125,14 +143,26 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         entity.setEstadoPeticion(EstadoPeticion.Pendiente);
         entity.setFechaCreacionSolicitud(OffsetDateTime.now());
 
-        // 3️. Guardar en BD
         SolicitudRecoleccionEntity saved = solicitudRepository.save(entity);
+
+        // Envío de correo al usuario solicitante (individual)
+        String asunto = " Solicitud registrada correctamente";
+        String contenido = "Hola " + usuario.getNombre() + ",\n\n"
+                + "Tu solicitud de recolección ha sido registrada exitosamente con el ID: " + saved.getIdSolicitud() + "\n\n"
+                + " Tipo de residuo: " + entity.getTipoResiduo() + "\n"
+                + " Cantidad: " + entity.getCantidad() + "\n"
+                + " Ubicación: " + entity.getUbicacion() + "\n"
+                + " Fecha programada: " + (entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A") + "\n\n"
+                + "Gracias por contribuir al cuidado del medio ambiente.\n\n"
+                + "EcoSoftware - Gestión de Residuos";
+        emailService.enviarCorreo(usuario.getCorreo(), asunto, contenido);
+
+        
+        notificarRecicladoresNuevaSolicitud(saved);
+
         return entityToDTO(saved);
     }
 
-    // ==========================================================
-    // Obtener una solicitud por ID
-    // ==========================================================
     @Override
     public SolicitudRecoleccionDTO obtenerPorId(Long id) {
         SolicitudRecoleccionEntity entity = solicitudRepository.findById(id)
@@ -140,9 +170,6 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return entityToDTO(entity);
     }
 
-    // ==========================================================
-    // Listar todas las solicitudes
-    // ==========================================================
     @Override
     public List<SolicitudRecoleccionDTO> listarTodas() {
         return solicitudRepository.findAll().stream()
@@ -150,9 +177,6 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
                 .collect(Collectors.toList());
     }
 
-    // ==========================================================
-    // Listar solicitudes por estado (Pendiente, Aceptada, etc.)
-    // ==========================================================
     @Override
     public List<SolicitudRecoleccionDTO> listarPorEstado(EstadoPeticion estado) {
         return solicitudRepository.findByEstadoPeticion(estado).stream()
@@ -160,51 +184,52 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
                 .collect(Collectors.toList());
     }
 
-    // ==========================================================
-    // Aceptar solicitud (Recolector la toma)
-    // ==========================================================
     @Override
     public SolicitudRecoleccionDTO aceptarSolicitud(Long solicitudId) {
-        // 1️. Buscar solicitud
         SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(solicitudId)
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-        // 2️. Validar que esté pendiente
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden aceptar solicitudes pendientes");
         }
 
-        // 3️. Obtener recolector desde el contexto de seguridad (token)
+        // Obtener el usuario reciclador/recolector autenticado
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String correoRecolector = auth.getName();
-
-        // 4️. Buscar recolector en BD
         UsuarioEntity recolector = usuarioRepository.findByCorreo(correoRecolector)
-                .orElseThrow(() -> new RuntimeException("Recolector no encontrado"));
+                .orElseThrow(() -> new RuntimeException("Recolector no encontrado: " + correoRecolector));
 
-        // 5️. Actualizar solicitud
+        // 1. Actualizar Solicitud
         solicitud.setAceptadaPor(recolector);
         solicitud.setEstadoPeticion(EstadoPeticion.Aceptada);
 
-        // 6️. Crear recolección asociada
+        // 2. Crear nueva Recoleccion
         RecoleccionEntity recoleccion = new RecoleccionEntity();
         recoleccion.setSolicitud(solicitud);
         recoleccion.setRecolector(recolector);
         recoleccion.setEstado(com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion.En_Progreso);
         recoleccion.setFechaRecoleccion(solicitud.getFechaProgramada());
         recoleccion.setEvidencia(solicitud.getEvidencia());
-        recoleccion.setObservaciones("Recolección iniciada");
+        recoleccion.setObservaciones("Recolección iniciada y aceptada por: " + recolector.getNombre());
+        solicitud.setRecoleccion(recoleccion); // Establecer la relación bidireccional
 
-        solicitud.setRecoleccion(recoleccion);
-
-        // 7️. Guardar cambios
+        // Guardar la solicitud (asumiendo CascadeType.ALL para RecoleccionEntity)
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
+        
+        // 3. Notificar al usuario (creador de la solicitud)
+        UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
+        String asunto = "Solicitud de recolección aceptada";
+        String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
+                + "¡Buenas noticias! Tu solicitud de recolección (ID: " + solicitud.getIdSolicitud() + ") ha sido **Aceptada**.\n\n"
+                + " Recolector asignado: " + recolector.getNombre() + "\n"
+                + " Fecha programada: " + (solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A") + "\n"
+                + "Por favor, espera la recolección.\n\n"
+                + "EcoSoftware - Gestión de Residuos";
+        emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
+
         return entityToDTO(saved);
     }
 
-    // ==========================================================
-    // Rechazar solicitud (con motivo)
-    // ==========================================================
     @Override
     public SolicitudRecoleccionDTO rechazarSolicitud(Long solicitudId, String motivo) {
         SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(solicitudId)
@@ -213,35 +238,39 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden rechazar solicitudes pendientes");
         }
-
+        
         solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
-        return entityToDTO(solicitudRepository.save(solicitud));
+        SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
+
+        // Notificar al usuario
+        UsuarioEntity usuarioSolicitante = saved.getUsuario();
+        String asunto = " Solicitud de recolección rechazada";
+        String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
+                + "Lamentamos informarte que tu solicitud de recolección (ID: " + saved.getIdSolicitud() + ") ha sido **Rechazada**.\n\n"
+                + "Motivo del rechazo: " + (motivo != null ? motivo : "No especificado") + "\n\n"
+                + "Por favor, revisa tu solicitud y vuelve a intentarlo si es necesario.\n\n"
+                + "EcoSoftware - Gestión de Residuos";
+        emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
+        
+        return entityToDTO(saved);
     }
 
-    // ==========================================================
-    // Actualizar solicitud (solo si está pendiente y pertenece al usuario)
-    // ==========================================================
     @Override
     public SolicitudRecoleccionDTO actualizarSolicitudConUsuario(SolicitudRecoleccionDTO dto, String correoUsuario) {
-        // 1️. Buscar usuario logueado
         UsuarioEntity usuario = usuarioRepository.findByCorreo(correoUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con el correo: " + correoUsuario));
 
-        // 2️. Buscar solicitud
         SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(dto.getIdSolicitud())
                 .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
-        // 3️. Validar propiedad
         if (!solicitud.getUsuario().getIdUsuario().equals(usuario.getIdUsuario())) {
             throw new RuntimeException("No tienes permiso para modificar esta solicitud");
         }
 
-        // 4️. Validar estado
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden actualizar solicitudes pendientes");
         }
 
-        // 5️. Actualizar campos
         solicitud.setTipoResiduo(dto.getTipoResiduo());
         solicitud.setCantidad(dto.getCantidad());
         solicitud.setDescripcion(dto.getDescripcion());
@@ -249,19 +278,16 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         solicitud.setUbicacion(dto.getUbicacion());
         solicitud.setEvidencia(dto.getEvidencia());
         solicitud.setFechaProgramada(dto.getFechaProgramada());
-
+        
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
+        
         return entityToDTO(saved);
     }
 
     // ==========================================================
     // Método auxiliar para filtrar solicitudes
     // ==========================================================
-    private List<SolicitudRecoleccionDTO> obtenerSolicitudesFiltradas(EstadoPeticion estado,
-            Localidad localidad,
-            LocalDateTime fechaInicio,
-            LocalDateTime fechaFin) {
-
+    private List<SolicitudRecoleccionDTO> obtenerSolicitudesFiltradas(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         // 1️. Consultar según filtros
         List<SolicitudRecoleccionEntity> entities;
         if (estado != null && localidad != null) {
@@ -280,27 +306,31 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
                 .collect(Collectors.toList());
 
         // 3️. Filtrar por fechas (opcional)
-        if (fechaInicio == null && fechaFin == null) return dtos;
+        if (fechaInicio == null && fechaFin == null) {
+            return dtos;
+        }
 
         return dtos.stream().filter(dto -> {
             boolean inRange = false;
-
-            // Filtrar por fecha de creación
+            
+            // Usar una función auxiliar para verificar el rango
+            java.util.function.Function<LocalDateTime, Boolean> isDateInRange = (date) -> {
+                boolean cond = true;
+                if (fechaInicio != null && date.isBefore(fechaInicio)) cond = false;
+                if (fechaFin != null && date.isAfter(fechaFin)) cond = false;
+                return cond;
+            };
+            
+            // Filtrar por fecha de creación (si existe)
             if (dto.getFechaCreacionSolicitud() != null) {
                 LocalDateTime fc = dto.getFechaCreacionSolicitud().toLocalDateTime();
-                boolean cond = true;
-                if (fechaInicio != null && fc.isBefore(fechaInicio)) cond = false;
-                if (fechaFin != null && fc.isAfter(fechaFin)) cond = false;
-                if (cond) inRange = true;
+                if (isDateInRange.apply(fc)) inRange = true;
             }
 
-            // Si no entra, revisar fecha programada
+            // Si no está en rango por fecha de creación, revisar fecha programada (si existe)
             if (!inRange && dto.getFechaProgramada() != null) {
                 LocalDateTime fp = dto.getFechaProgramada();
-                boolean cond = true;
-                if (fechaInicio != null && fp.isBefore(fechaInicio)) cond = false;
-                if (fechaFin != null && fp.isAfter(fechaFin)) cond = false;
-                if (cond) inRange = true;
+                if (isDateInRange.apply(fp)) inRange = true;
             }
 
             return inRange;
@@ -311,12 +341,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // Generar reporte Excel
     // ==========================================================
     @Override
-    public void generarReporteExcel(EstadoPeticion estado,
-            Localidad localidad,
-            LocalDateTime fechaInicio,
-            LocalDateTime fechaFin,
-            OutputStream os) throws IOException {
-
+    public void generarReporteExcel(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin, OutputStream os) throws IOException {
         // 1️. Obtener datos filtrados
         List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
 
@@ -325,9 +350,11 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         Sheet sheet = workbook.createSheet("Solicitudes");
 
         // 3️. Definir encabezados
-        String[] headers = { "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
-                "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", "Evidencia",
-                "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" };
+        String[] headers = { 
+            "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad", 
+            "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", "Evidencia", 
+            "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" 
+        };
 
         // 4️. Crear fila de encabezado
         Row headerRow = sheet.createRow(0);
@@ -339,20 +366,20 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         int rowNum = 1;
         for (SolicitudRecoleccionDTO s : solicitudes) {
             Row row = sheet.createRow(rowNum++);
-            row.createCell(0).setCellValue(s.getIdSolicitud() != null ? s.getIdSolicitud() : 0);
-            row.createCell(1).setCellValue(s.getUsuarioId() != null ? s.getUsuarioId() : 0);
-            row.createCell(2).setCellValue(s.getAceptadaPorId() != null ? s.getAceptadaPorId() : 0);
-            row.createCell(3).setCellValue(s.getTipoResiduo() != null ? s.getTipoResiduo().name() : "");
-            row.createCell(4).setCellValue(s.getCantidad() != null ? s.getCantidad() : "");
-            row.createCell(5).setCellValue(s.getEstadoPeticion() != null ? s.getEstadoPeticion().name() : "");
-            row.createCell(6).setCellValue(s.getDescripcion() != null ? s.getDescripcion() : "");
-            row.createCell(7).setCellValue(s.getLocalidad() != null ? s.getLocalidad().name() : "");
-            row.createCell(8).setCellValue(s.getUbicacion() != null ? s.getUbicacion() : "");
-            row.createCell(9).setCellValue(s.getEvidencia() != null ? s.getEvidencia() : "");
-            row.createCell(10).setCellValue(
-                    s.getFechaCreacionSolicitud() != null ? s.getFechaCreacionSolicitud().toString() : "");
-            row.createCell(11).setCellValue(s.getFechaProgramada() != null ? s.getFechaProgramada().toString() : "");
-            row.createCell(12).setCellValue(s.getRecoleccionId() != null ? s.getRecoleccionId() : 0);
+            // Uso de Optional.ofNullable para manejar nulls de forma segura
+            row.createCell(0).setCellValue(Optional.ofNullable(s.getIdSolicitud()).orElse(0L).doubleValue());
+            row.createCell(1).setCellValue(Optional.ofNullable(s.getUsuarioId()).orElse(0L).doubleValue());
+            row.createCell(2).setCellValue(Optional.ofNullable(s.getAceptadaPorId()).orElse(0L).doubleValue());
+            row.createCell(3).setCellValue(Optional.ofNullable(s.getTipoResiduo()).map(Enum::name).orElse(""));
+            row.createCell(4).setCellValue(Optional.ofNullable(s.getCantidad()).orElse(""));
+            row.createCell(5).setCellValue(Optional.ofNullable(s.getEstadoPeticion()).map(Enum::name).orElse(""));
+            row.createCell(6).setCellValue(Optional.ofNullable(s.getDescripcion()).orElse(""));
+            row.createCell(7).setCellValue(Optional.ofNullable(s.getLocalidad()).map(Enum::name).orElse(""));
+            row.createCell(8).setCellValue(Optional.ofNullable(s.getUbicacion()).orElse(""));
+            row.createCell(9).setCellValue(Optional.ofNullable(s.getEvidencia()).orElse(""));
+            row.createCell(10).setCellValue(Optional.ofNullable(s.getFechaCreacionSolicitud()).map(OffsetDateTime::toString).orElse(""));
+            row.createCell(11).setCellValue(Optional.ofNullable(s.getFechaProgramada()).map(LocalDateTime::toString).orElse(""));
+            row.createCell(12).setCellValue(Optional.ofNullable(s.getRecoleccionId()).orElse(0L).doubleValue());
         }
 
         // 6️. Ajustar ancho de columnas
@@ -369,12 +396,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // Generar reporte PDF
     // ==========================================================
     @Override
-    public void generarReportePDF(EstadoPeticion estado,
-            Localidad localidad,
-            LocalDateTime fechaInicio,
-            LocalDateTime fechaFin,
-            OutputStream os) throws IOException, DocumentException {
-
+    public void generarReportePDF(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin, OutputStream os) throws IOException, DocumentException {
         // 1️. Obtener datos filtrados
         List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
 
@@ -384,14 +406,15 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         document.open();
 
         // 3️. Título
-        document.add(new Paragraph("Reporte de Solicitudes"));
+        document.add(new Paragraph("Reporte de Solicitudes de Recolección"));
         document.add(new Paragraph(" "));
 
         // 4️. Encabezados de tabla
-        String[] headers = { "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
-                "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion",
-                "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" };
-
+        String[] headers = { 
+            "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad", 
+            "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", 
+            "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" 
+        };
         PdfPTable table = new PdfPTable(headers.length);
         table.setWidthPercentage(100);
 
@@ -404,18 +427,19 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         // 6️. Llenar filas con datos
         for (SolicitudRecoleccionDTO s : solicitudes) {
-            table.addCell(s.getIdSolicitud() != null ? s.getIdSolicitud().toString() : "");
-            table.addCell(s.getUsuarioId() != null ? s.getUsuarioId().toString() : "");
-            table.addCell(s.getAceptadaPorId() != null ? s.getAceptadaPorId().toString() : "");
-            table.addCell(s.getTipoResiduo() != null ? s.getTipoResiduo().name() : "");
-            table.addCell(s.getCantidad() != null ? s.getCantidad() : "");
-            table.addCell(s.getEstadoPeticion() != null ? s.getEstadoPeticion().name() : "");
-            table.addCell(s.getDescripcion() != null ? s.getDescripcion() : "");
-            table.addCell(s.getLocalidad() != null ? s.getLocalidad().name() : "");
-            table.addCell(s.getUbicacion() != null ? s.getUbicacion() : "");
-            table.addCell(s.getFechaCreacionSolicitud() != null ? s.getFechaCreacionSolicitud().toString() : "");
-            table.addCell(s.getFechaProgramada() != null ? s.getFechaProgramada().toString() : "");
-            table.addCell(s.getRecoleccionId() != null ? s.getRecoleccionId().toString() : "");
+            // Uso de Optional.ofNullable para manejar nulls de forma segura
+            table.addCell(Optional.ofNullable(s.getIdSolicitud()).map(Object::toString).orElse(""));
+            table.addCell(Optional.ofNullable(s.getUsuarioId()).map(Object::toString).orElse(""));
+            table.addCell(Optional.ofNullable(s.getAceptadaPorId()).map(Object::toString).orElse(""));
+            table.addCell(Optional.ofNullable(s.getTipoResiduo()).map(Enum::name).orElse(""));
+            table.addCell(Optional.ofNullable(s.getCantidad()).orElse(""));
+            table.addCell(Optional.ofNullable(s.getEstadoPeticion()).map(Enum::name).orElse(""));
+            table.addCell(Optional.ofNullable(s.getDescripcion()).orElse(""));
+            table.addCell(Optional.ofNullable(s.getLocalidad()).map(Enum::name).orElse(""));
+            table.addCell(Optional.ofNullable(s.getUbicacion()).orElse(""));
+            table.addCell(Optional.ofNullable(s.getFechaCreacionSolicitud()).map(OffsetDateTime::toString).orElse(""));
+            table.addCell(Optional.ofNullable(s.getFechaProgramada()).map(LocalDateTime::toString).orElse(""));
+            table.addCell(Optional.ofNullable(s.getRecoleccionId()).map(Object::toString).orElse(""));
         }
 
         // 7️. Agregar tabla al documento
