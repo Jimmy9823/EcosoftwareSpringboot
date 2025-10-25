@@ -50,14 +50,17 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
 
-    public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository, UsuarioRepository usuarioRepository, EmailService emailService) {
+    public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository,
+            UsuarioRepository usuarioRepository, EmailService emailService) {
         this.solicitudRepository = solicitudRepository;
         this.usuarioRepository = usuarioRepository;
         this.emailService = emailService;
     }
 
     /**
-     * Convierte una entidad de SolicitudRecoleccionEntity a SolicitudRecoleccionDTO.
+     * Convierte una entidad de SolicitudRecoleccionEntity a
+     * SolicitudRecoleccionDTO.
+     * 
      * @param entity La entidad a convertir.
      * @return El DTO resultante.
      */
@@ -82,25 +85,31 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // ==========================================================
     // Lógica para Correo Masivo (Método auxiliar)
     // ==========================================================
-    
+
     /**
-     * Notifica a todos los usuarios con rol 'RECICLADOR' sobre una nueva solicitud pendiente.
-     * Se ajusta para usar findAll() y filtrar en memoria, sin modificar UsuarioRepository.
+     * Notifica a todos los usuarios con rol 'RECICLADOR' sobre una nueva solicitud
+     * pendiente.
+     * Se ajusta para usar findAll() y filtrar en memoria, sin modificar
+     * UsuarioRepository.
      */
     private void notificarRecicladoresNuevaSolicitud(SolicitudRecoleccionEntity nuevaSolicitud) {
-        // 1. Obtener la lista de correos de los recicladores (Filtrando después de obtener todos)
+        // 1. Obtener la lista de correos de los recicladores (Filtrando después de
+        // obtener todos)
         List<String> correosRecicladores;
-        
+
         try {
             // Obtenemos todos los usuarios y filtramos aquellos cuyo rol sea "RECICLADOR"
-            // Asume que UsuarioEntity.getRol().getNombre() existe y devuelve el nombre del rol como String.
+            // Asume que UsuarioEntity.getRol().getNombre() existe y devuelve el nombre del
+            // rol como String.
             correosRecicladores = usuarioRepository.findAll().stream()
-                                                    .filter(u -> u.getRol() != null && "RECICLADOR".equals(u.getRol().getNombre()))
-                                                    .map(UsuarioEntity::getCorreo)
-                                                    .collect(Collectors.toList());
+                    .filter(u -> u.getRol() != null && "Reciclador".equals(u.getRol().getNombre()))
+                    .map(UsuarioEntity::getCorreo)
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             // Se captura cualquier error al acceder a la relación Rol o al campo nombre
-            System.err.println("ERROR al obtener lista de recicladores para notificación masiva. Revise si la entidad UsuarioEntity tiene la relación correcta a RolEntity y si el campo del nombre del rol es 'nombre'. Mensaje: " + e.getMessage());
+            System.err.println(
+                    "ERROR al obtener lista de recicladores para notificación masiva. Revise si la entidad UsuarioEntity tiene la relación correcta a RolEntity y si el campo del nombre del rol es 'nombre'. Mensaje: "
+                            + e.getMessage());
             return;
         }
 
@@ -114,7 +123,9 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
                 + "Se ha registrado una **nueva solicitud de recolección pendiente** que requiere tu atención:\n"
                 + " Tipo de residuo: " + nuevaSolicitud.getTipoResiduo() + "\n"
                 + " Localidad: " + nuevaSolicitud.getLocalidad() + "\n"
-                + " Fecha programada: " + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A") + "\n"
+                + " Fecha programada: "
+                + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A")
+                + "\n"
                 + " Por favor, accede al sistema para revisar y aceptar la solicitud.\n\n"
                 + "EcoSoftware - Gestión de Residuos";
 
@@ -148,16 +159,17 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         // Envío de correo al usuario solicitante (individual)
         String asunto = " Solicitud registrada correctamente";
         String contenido = "Hola " + usuario.getNombre() + ",\n\n"
-                + "Tu solicitud de recolección ha sido registrada exitosamente con el ID: " + saved.getIdSolicitud() + "\n\n"
+                + "Tu solicitud de recolección ha sido registrada exitosamente con el ID: " + saved.getIdSolicitud()
+                + "\n\n"
                 + " Tipo de residuo: " + entity.getTipoResiduo() + "\n"
                 + " Cantidad: " + entity.getCantidad() + "\n"
                 + " Ubicación: " + entity.getUbicacion() + "\n"
-                + " Fecha programada: " + (entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A") + "\n\n"
+                + " Fecha programada: "
+                + (entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A") + "\n\n"
                 + "Gracias por contribuir al cuidado del medio ambiente.\n\n"
                 + "EcoSoftware - Gestión de Residuos";
         emailService.enviarCorreo(usuario.getCorreo(), asunto, contenido);
 
-        
         notificarRecicladoresNuevaSolicitud(saved);
 
         return entityToDTO(saved);
@@ -215,14 +227,16 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         // Guardar la solicitud (asumiendo CascadeType.ALL para RecoleccionEntity)
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
-        
+
         // 3. Notificar al usuario (creador de la solicitud)
         UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
         String asunto = "Solicitud de recolección aceptada";
         String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
-                + "¡Buenas noticias! Tu solicitud de recolección (ID: " + solicitud.getIdSolicitud() + ") ha sido **Aceptada**.\n\n"
+                + "¡Buenas noticias! Tu solicitud de recolección (ID: " + solicitud.getIdSolicitud()
+                + ") ha sido **Aceptada**.\n\n"
                 + " Recolector asignado: " + recolector.getNombre() + "\n"
-                + " Fecha programada: " + (solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A") + "\n"
+                + " Fecha programada: "
+                + (solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A") + "\n"
                 + "Por favor, espera la recolección.\n\n"
                 + "EcoSoftware - Gestión de Residuos";
         emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
@@ -238,7 +252,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         if (solicitud.getEstadoPeticion() != EstadoPeticion.Pendiente) {
             throw new RuntimeException("Solo se pueden rechazar solicitudes pendientes");
         }
-        
+
         solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
 
@@ -246,12 +260,13 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         UsuarioEntity usuarioSolicitante = saved.getUsuario();
         String asunto = " Solicitud de recolección rechazada";
         String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
-                + "Lamentamos informarte que tu solicitud de recolección (ID: " + saved.getIdSolicitud() + ") ha sido **Rechazada**.\n\n"
+                + "Lamentamos informarte que tu solicitud de recolección (ID: " + saved.getIdSolicitud()
+                + ") ha sido **Rechazada**.\n\n"
                 + "Motivo del rechazo: " + (motivo != null ? motivo : "No especificado") + "\n\n"
                 + "Por favor, revisa tu solicitud y vuelve a intentarlo si es necesario.\n\n"
                 + "EcoSoftware - Gestión de Residuos";
         emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
-        
+
         return entityToDTO(saved);
     }
 
@@ -278,16 +293,17 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         solicitud.setUbicacion(dto.getUbicacion());
         solicitud.setEvidencia(dto.getEvidencia());
         solicitud.setFechaProgramada(dto.getFechaProgramada());
-        
+
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
-        
+
         return entityToDTO(saved);
     }
 
     // ==========================================================
     // Método auxiliar para filtrar solicitudes
     // ==========================================================
-    private List<SolicitudRecoleccionDTO> obtenerSolicitudesFiltradas(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin) {
+    private List<SolicitudRecoleccionDTO> obtenerSolicitudesFiltradas(EstadoPeticion estado, Localidad localidad,
+            LocalDateTime fechaInicio, LocalDateTime fechaFin) {
         // 1️. Consultar según filtros
         List<SolicitudRecoleccionEntity> entities;
         if (estado != null && localidad != null) {
@@ -312,25 +328,30 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         return dtos.stream().filter(dto -> {
             boolean inRange = false;
-            
+
             // Usar una función auxiliar para verificar el rango
             java.util.function.Function<LocalDateTime, Boolean> isDateInRange = (date) -> {
                 boolean cond = true;
-                if (fechaInicio != null && date.isBefore(fechaInicio)) cond = false;
-                if (fechaFin != null && date.isAfter(fechaFin)) cond = false;
+                if (fechaInicio != null && date.isBefore(fechaInicio))
+                    cond = false;
+                if (fechaFin != null && date.isAfter(fechaFin))
+                    cond = false;
                 return cond;
             };
-            
+
             // Filtrar por fecha de creación (si existe)
             if (dto.getFechaCreacionSolicitud() != null) {
                 LocalDateTime fc = dto.getFechaCreacionSolicitud().toLocalDateTime();
-                if (isDateInRange.apply(fc)) inRange = true;
+                if (isDateInRange.apply(fc))
+                    inRange = true;
             }
 
-            // Si no está en rango por fecha de creación, revisar fecha programada (si existe)
+            // Si no está en rango por fecha de creación, revisar fecha programada (si
+            // existe)
             if (!inRange && dto.getFechaProgramada() != null) {
                 LocalDateTime fp = dto.getFechaProgramada();
-                if (isDateInRange.apply(fp)) inRange = true;
+                if (isDateInRange.apply(fp))
+                    inRange = true;
             }
 
             return inRange;
@@ -341,19 +362,21 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // Generar reporte Excel
     // ==========================================================
     @Override
-    public void generarReporteExcel(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin, OutputStream os) throws IOException {
+    public void generarReporteExcel(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio,
+            LocalDateTime fechaFin, OutputStream os) throws IOException {
         // 1️. Obtener datos filtrados
-        List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
+        List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio,
+                fechaFin);
 
         // 2️. Crear libro de Excel
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Solicitudes");
 
         // 3️. Definir encabezados
-        String[] headers = { 
-            "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad", 
-            "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", "Evidencia", 
-            "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" 
+        String[] headers = {
+                "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
+                "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", "Evidencia",
+                "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId"
         };
 
         // 4️. Crear fila de encabezado
@@ -377,8 +400,10 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             row.createCell(7).setCellValue(Optional.ofNullable(s.getLocalidad()).map(Enum::name).orElse(""));
             row.createCell(8).setCellValue(Optional.ofNullable(s.getUbicacion()).orElse(""));
             row.createCell(9).setCellValue(Optional.ofNullable(s.getEvidencia()).orElse(""));
-            row.createCell(10).setCellValue(Optional.ofNullable(s.getFechaCreacionSolicitud()).map(OffsetDateTime::toString).orElse(""));
-            row.createCell(11).setCellValue(Optional.ofNullable(s.getFechaProgramada()).map(LocalDateTime::toString).orElse(""));
+            row.createCell(10).setCellValue(
+                    Optional.ofNullable(s.getFechaCreacionSolicitud()).map(OffsetDateTime::toString).orElse(""));
+            row.createCell(11)
+                    .setCellValue(Optional.ofNullable(s.getFechaProgramada()).map(LocalDateTime::toString).orElse(""));
             row.createCell(12).setCellValue(Optional.ofNullable(s.getRecoleccionId()).orElse(0L).doubleValue());
         }
 
@@ -396,9 +421,11 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // Generar reporte PDF
     // ==========================================================
     @Override
-    public void generarReportePDF(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio, LocalDateTime fechaFin, OutputStream os) throws IOException, DocumentException {
+    public void generarReportePDF(EstadoPeticion estado, Localidad localidad, LocalDateTime fechaInicio,
+            LocalDateTime fechaFin, OutputStream os) throws IOException, DocumentException {
         // 1️. Obtener datos filtrados
-        List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio, fechaFin);
+        List<SolicitudRecoleccionDTO> solicitudes = obtenerSolicitudesFiltradas(estado, localidad, fechaInicio,
+                fechaFin);
 
         // 2️. Configurar documento PDF
         Document document = new Document(PageSize.A4.rotate());
@@ -410,10 +437,10 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         document.add(new Paragraph(" "));
 
         // 4️. Encabezados de tabla
-        String[] headers = { 
-            "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad", 
-            "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion", 
-            "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId" 
+        String[] headers = {
+                "ID", "UsuarioId", "AceptadaPorId", "TipoResiduo", "Cantidad",
+                "EstadoPeticion", "Descripcion", "Localidad", "Ubicacion",
+                "FechaCreacionSolicitud", "FechaProgramada", "RecoleccionId"
         };
         PdfPTable table = new PdfPTable(headers.length);
         table.setWidthPercentage(100);
