@@ -1,12 +1,22 @@
 package com.EcoSoftware.Scrum6.Implement;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.CapacitacionDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.InscripcionDTO;
@@ -43,6 +53,98 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
 
     @Autowired
     private UsuarioRepository usuarioRepository;
+
+    /**
+     * Carga masiva de capacitaciones desde un archivo Excel.
+     * Solo crea nuevas capacitaciones, no actualiza las existentes.
+     */
+    @Override
+    public void cargarCapacitacionesDesdeExcel(MultipartFile file) {
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+            List<CapacitacionEntity> capacitaciones = new ArrayList<>();
+
+            // Saltar la primera fila (cabeceras)
+            if (rows.hasNext()) {
+                rows.next();
+            }
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+
+                // Leer columnas (en orden)
+                String nombre = getCellValue(row.getCell(0));
+                String descripcion = getCellValue(row.getCell(1));
+                String numeroDeClases = getCellValue(row.getCell(2));
+                String duracion = getCellValue(row.getCell(3));
+                String imagen = getCellValue(row.getCell(4));
+
+                // Validación básica: no agregar filas vacías
+                if (nombre == null || nombre.isBlank())
+                    continue;
+
+                CapacitacionEntity c = new CapacitacionEntity();
+                c.setNombre(nombre);
+                c.setDescripcion(descripcion);
+                c.setNumeroDeClases(numeroDeClases);
+                c.setDuracion(duracion);
+                c.setImagen(imagen);
+
+                capacitaciones.add(c);
+            }
+
+            capacitacionRepository.saveAll(capacitaciones);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al procesar el archivo Excel", e);
+        }
+    }
+
+    /**
+     * Genera una plantilla Excel con los campos requeridos para la carga masiva.
+     * Devuelve un arreglo de bytes que se puede descargar desde el frontend.
+     */
+    @Override
+    public byte[] generarPlantillaExcel() {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Plantilla Capacitaciones");
+            Row header = sheet.createRow(0);
+
+            // Encabezados
+            header.createCell(0).setCellValue("Nombre");
+            header.createCell(1).setCellValue("Descripción");
+            header.createCell(2).setCellValue("Número de Clases");
+            header.createCell(3).setCellValue("Duración");
+            header.createCell(4).setCellValue("Imagen");
+
+            // Ajustar tamaño de columnas
+            for (int i = 0; i <= 4; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al generar la plantilla Excel", e);
+        }
+    }
+
+    /**
+     * Método auxiliar para leer valores de celda como String.
+     */
+    private String getCellValue(Cell cell) {
+        if (cell == null)
+            return null;
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue().trim();
+            case NUMERIC -> String.valueOf((int) cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> null;
+        };
+    }
 
     // ===========================
     // CAPACITACION
@@ -147,6 +249,72 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
             dto.setCapacitacionId(entidad.getCapacitacion().getId());
             return dto;
         }).collect(Collectors.toList());
+    }
+
+    // ===========================
+    // CARGA MASIVA DE MÓDULOS
+    // ===========================
+    @Override
+    public byte[] generarPlantillaModulosExcel() {
+        try (Workbook workbook = new XSSFWorkbook()) {
+            Sheet sheet = workbook.createSheet("Plantilla Módulos");
+            Row header = sheet.createRow(0);
+
+            header.createCell(0).setCellValue("Duración");
+            header.createCell(1).setCellValue("Descripción");
+
+            for (int i = 0; i <= 1; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            workbook.write(out);
+            return out.toByteArray();
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al generar la plantilla Excel de módulos", e);
+        }
+    }
+
+    // ===========================
+    // CARGA MASIVA DE MÓDULOS
+    // ===========================
+    @Override
+    public void cargarModulosDesdeExcel(Long capacitacionId, MultipartFile file) {
+        CapacitacionEntity capacitacion = capacitacionRepository.findById(capacitacionId)
+                .orElseThrow(() -> new RuntimeException("Capacitación no encontrada"));
+
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Iterator<Row> rows = sheet.iterator();
+            List<ModuloEntity> modulos = new ArrayList<>();
+
+            if (rows.hasNext())
+                rows.next(); // Saltar encabezado
+
+            while (rows.hasNext()) {
+                Row row = rows.next();
+
+                String duracion = getCellValue(row.getCell(0));
+                String descripcion = getCellValue(row.getCell(1));
+
+                if ((duracion == null || duracion.isBlank()) &&
+                        (descripcion == null || descripcion.isBlank()))
+                    continue;
+
+                ModuloEntity m = new ModuloEntity();
+                m.setDuracion(duracion);
+                m.setDescripcion(descripcion);
+                m.setCapacitacion(capacitacion);
+
+                modulos.add(m);
+            }
+
+            moduloRepository.saveAll(modulos);
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error al procesar el archivo Excel de módulos", e);
+        }
     }
 
     // ===========================

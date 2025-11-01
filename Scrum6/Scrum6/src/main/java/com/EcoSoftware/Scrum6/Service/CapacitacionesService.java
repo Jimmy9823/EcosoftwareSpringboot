@@ -5,6 +5,8 @@ import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
 
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 /**
  * Interfaz de servicios para el módulo de capacitaciones
  */
@@ -24,6 +26,16 @@ public interface CapacitacionesService {
     List<CapacitacionDTO> listarTodasCapacitaciones();
 
     // ===========================
+    // CARGA MASIVA DE CAPACITACIONES
+    // ===========================
+
+    // Genera una plantilla de ejemplo en Excel
+    byte[] generarPlantillaExcel();
+
+    // Procesa el archivo Excel subido y guarda las capacitaciones
+    void cargarCapacitacionesDesdeExcel(MultipartFile file);
+
+    // ===========================
     // Modulo
     // ===========================
     ModuloDTO crearModulo(ModuloDTO dto);
@@ -33,6 +45,14 @@ public interface CapacitacionesService {
     void eliminarModulo(Long id);
 
     List<ModuloDTO> listarModulosPorCapacitacion(Long capacitacionId);
+
+    // ===========================
+    // CARGA MASIVA DE MÓDULOS
+    // ===========================
+    // Genera una plantilla de ejemplo en Excel para módulos
+    byte[] generarPlantillaModulosExcel();
+    // Procesa el archivo Excel subido y guarda los módulos asociados a una capacitación
+    void cargarModulosDesdeExcel(Long capacitacionId, MultipartFile file);
 
     // ===========================
     // Inscripcion

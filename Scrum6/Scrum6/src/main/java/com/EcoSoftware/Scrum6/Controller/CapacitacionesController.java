@@ -4,8 +4,11 @@ import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
 import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
 import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -14,35 +17,59 @@ import java.util.List;
 public class CapacitacionesController {
 
     @Autowired
-    private CapacitacionesService service;
+    private CapacitacionesService capacitacionesService;
+
+    
 
     // ===========================
     // CAPACITACIONES
     // ===========================
     @PostMapping
     public ResponseEntity<CapacitacionDTO> crearCapacitacion(@RequestBody CapacitacionDTO dto) {
-        return ResponseEntity.ok(service.crearCapacitacion(dto));
+        return ResponseEntity.ok(capacitacionesService.crearCapacitacion(dto));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<CapacitacionDTO> actualizarCapacitacion(@PathVariable Long id, @RequestBody CapacitacionDTO dto) {
-        return ResponseEntity.ok(service.actualizarCapacitacion(id, dto));
+    public ResponseEntity<CapacitacionDTO> actualizarCapacitacion(@PathVariable Long id,
+            @RequestBody CapacitacionDTO dto) {
+        return ResponseEntity.ok(capacitacionesService.actualizarCapacitacion(id, dto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarCapacitacion(@PathVariable Long id) {
-        service.eliminarCapacitacion(id);
+        capacitacionesService.eliminarCapacitacion(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<CapacitacionDTO> obtenerCapacitacion(@PathVariable Long id) {
-        return ResponseEntity.ok(service.obtenerCapacitacionPorId(id));
+        return ResponseEntity.ok(capacitacionesService.obtenerCapacitacionPorId(id));
     }
 
     @GetMapping
     public ResponseEntity<List<CapacitacionDTO>> listarCapacitaciones() {
-        return ResponseEntity.ok(service.listarTodasCapacitaciones());
+        return ResponseEntity.ok(capacitacionesService.listarTodasCapacitaciones());
+    }
+
+    // ===========================
+    // CARGA MASIVA EXCEL
+    // ===========================
+
+    // Subir archivo Excel
+    @PostMapping("/cargar-excel")
+    public ResponseEntity<String> cargarDesdeExcel(@RequestParam("file") MultipartFile file) {
+        capacitacionesService.cargarCapacitacionesDesdeExcel(file);
+        return ResponseEntity.ok("Capacitaciones cargadas correctamente.");
+    }
+
+    // Descargar plantilla Excel
+    @GetMapping("/plantilla")
+    public ResponseEntity<byte[]> descargarPlantilla() {
+        byte[] archivo = capacitacionesService.generarPlantillaExcel();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=plantilla_capacitaciones.xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(archivo);
     }
 
     // ===========================
@@ -50,23 +77,46 @@ public class CapacitacionesController {
     // ===========================
     @PostMapping("/modulos")
     public ResponseEntity<ModuloDTO> crearModulo(@RequestBody ModuloDTO dto) {
-        return ResponseEntity.ok(service.crearModulo(dto));
+        return ResponseEntity.ok(capacitacionesService.crearModulo(dto));
     }
 
     @PutMapping("/modulos/{id}")
     public ResponseEntity<ModuloDTO> actualizarModulo(@PathVariable Long id, @RequestBody ModuloDTO dto) {
-        return ResponseEntity.ok(service.actualizarModulo(id, dto));
+        return ResponseEntity.ok(capacitacionesService.actualizarModulo(id, dto));
     }
 
     @DeleteMapping("/modulos/{id}")
     public ResponseEntity<Void> eliminarModulo(@PathVariable Long id) {
-        service.eliminarModulo(id);
+        capacitacionesService.eliminarModulo(id);
         return ResponseEntity.ok().build();
     }
 
     @GetMapping("/{capacitacionId}/modulos")
     public ResponseEntity<List<ModuloDTO>> listarModulosPorCapacitacion(@PathVariable Long capacitacionId) {
-        return ResponseEntity.ok(service.listarModulosPorCapacitacion(capacitacionId));
+        return ResponseEntity.ok(capacitacionesService.listarModulosPorCapacitacion(capacitacionId));
+    }
+
+    // ===========================
+    // CARGA MASIVA DE MÓDULOS
+    // ===========================
+
+    // Descargar plantilla para módulos
+    @GetMapping("/modulos/plantilla")
+    public ResponseEntity<byte[]> descargarPlantillaModulos() {
+        byte[] archivo = capacitacionesService.generarPlantillaModulosExcel();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=plantilla_modulos.xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(archivo);
+    }
+
+    // Cargar módulos desde Excel
+    @PostMapping("/{capacitacionId}/modulos/cargar-excel")
+    public ResponseEntity<String> cargarModulosDesdeExcel(
+            @PathVariable Long capacitacionId,
+            @RequestParam("file") MultipartFile file) {
+        capacitacionesService.cargarModulosDesdeExcel(capacitacionId, file);
+        return ResponseEntity.ok("Módulos cargados correctamente para la capacitación " + capacitacionId);
     }
 
     // ===========================
@@ -74,22 +124,23 @@ public class CapacitacionesController {
     // ===========================
     @PostMapping("/inscripciones")
     public ResponseEntity<InscripcionDTO> inscribirse(@RequestParam Long usuarioId, @RequestParam Long cursoId) {
-        return ResponseEntity.ok(service.inscribirse(usuarioId, cursoId));
+        return ResponseEntity.ok(capacitacionesService.inscribirse(usuarioId, cursoId));
     }
 
     @PutMapping("/inscripciones/{id}")
-    public ResponseEntity<InscripcionDTO> actualizarEstadoInscripcion(@PathVariable Long id, @RequestParam EstadoCurso estado) {
-        return ResponseEntity.ok(service.actualizarEstadoInscripcion(id, estado));
+    public ResponseEntity<InscripcionDTO> actualizarEstadoInscripcion(@PathVariable Long id,
+            @RequestParam EstadoCurso estado) {
+        return ResponseEntity.ok(capacitacionesService.actualizarEstadoInscripcion(id, estado));
     }
 
     @GetMapping("/inscripciones/usuario/{usuarioId}")
     public ResponseEntity<List<InscripcionDTO>> listarInscripcionesPorUsuario(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(service.listarInscripcionesPorUsuario(usuarioId));
+        return ResponseEntity.ok(capacitacionesService.listarInscripcionesPorUsuario(usuarioId));
     }
 
     @GetMapping("/inscripciones/curso/{cursoId}")
     public ResponseEntity<List<InscripcionDTO>> listarInscripcionesPorCurso(@PathVariable Long cursoId) {
-        return ResponseEntity.ok(service.listarInscripcionesPorCurso(cursoId));
+        return ResponseEntity.ok(capacitacionesService.listarInscripcionesPorCurso(cursoId));
     }
 
     // ===========================
@@ -97,21 +148,21 @@ public class CapacitacionesController {
     // ===========================
     @PostMapping("/progreso")
     public ResponseEntity<ProgresoDTO> registrarProgreso(@RequestBody ProgresoDTO dto) {
-        return ResponseEntity.ok(service.registrarProgreso(dto));
+        return ResponseEntity.ok(capacitacionesService.registrarProgreso(dto));
     }
 
     @PutMapping("/progreso/{id}")
     public ResponseEntity<ProgresoDTO> actualizarProgreso(@PathVariable Long id, @RequestBody ProgresoDTO dto) {
-        return ResponseEntity.ok(service.actualizarProgreso(id, dto));
+        return ResponseEntity.ok(capacitacionesService.actualizarProgreso(id, dto));
     }
 
     @GetMapping("/progreso/usuario/{usuarioId}")
     public ResponseEntity<List<ProgresoDTO>> listarProgresosPorUsuario(@PathVariable Long usuarioId) {
-        return ResponseEntity.ok(service.listarProgresosPorUsuario(usuarioId));
+        return ResponseEntity.ok(capacitacionesService.listarProgresosPorUsuario(usuarioId));
     }
 
     @GetMapping("/progreso/curso/{cursoId}")
     public ResponseEntity<List<ProgresoDTO>> listarProgresosPorCurso(@PathVariable Long cursoId) {
-        return ResponseEntity.ok(service.listarProgresosPorCurso(cursoId));
+        return ResponseEntity.ok(capacitacionesService.listarProgresosPorCurso(cursoId));
     }
 }
