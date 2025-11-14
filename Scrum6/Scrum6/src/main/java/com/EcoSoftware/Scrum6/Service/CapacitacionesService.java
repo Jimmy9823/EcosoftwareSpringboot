@@ -2,10 +2,11 @@ package com.EcoSoftware.Scrum6.Service;
 
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
 import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
-
-import java.util.List;
-
 import org.springframework.web.multipart.MultipartFile;
+import java.util.List;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.UploadResultDTO;
+import org.springframework.web.multipart.MultipartFile;
+
 
 /**
  * Interfaz de servicios para el módulo de capacitaciones
@@ -28,15 +29,15 @@ public interface CapacitacionesService {
     // ===========================
     // CARGA MASIVA DE CAPACITACIONES
     // ===========================
-
-    // Genera una plantilla de ejemplo en Excel
     byte[] generarPlantillaExcel();
 
-    // Procesa el archivo Excel subido y guarda las capacitaciones
-    void cargarCapacitacionesDesdeExcel(MultipartFile file);
+    UploadResultDTO cargarCapacitacionesDesdeExcel(MultipartFile file);
+
+    List<CapacitacionDTO> validarCapacitacionesExcel(MultipartFile file);
+
 
     // ===========================
-    // Modulo
+    // MÓDULOS
     // ===========================
     ModuloDTO crearModulo(ModuloDTO dto);
 
@@ -46,16 +47,12 @@ public interface CapacitacionesService {
 
     List<ModuloDTO> listarModulosPorCapacitacion(Long capacitacionId);
 
-    // ===========================
-    // CARGA MASIVA DE MÓDULOS
-    // ===========================
-    // Genera una plantilla de ejemplo en Excel para módulos
     byte[] generarPlantillaModulosExcel();
-    // Procesa el archivo Excel subido y guarda los módulos asociados a una capacitación
+
     void cargarModulosDesdeExcel(Long capacitacionId, MultipartFile file);
 
     // ===========================
-    // Inscripcion
+    // INSCRIPCIONES
     // ===========================
     InscripcionDTO inscribirse(Long usuarioId, Long cursoId);
 
@@ -66,7 +63,7 @@ public interface CapacitacionesService {
     List<InscripcionDTO> listarInscripcionesPorCurso(Long cursoId);
 
     // ===========================
-    // Progreso
+    // PROGRESO
     // ===========================
     ProgresoDTO registrarProgreso(ProgresoDTO dto);
 
@@ -75,4 +72,11 @@ public interface CapacitacionesService {
     List<ProgresoDTO> listarProgresosPorUsuario(Long usuarioId);
 
     List<ProgresoDTO> listarProgresosPorCurso(Long cursoId);
+
+    // ===========================
+    // VALIDACIÓN DE CAPACITACIONES
+    // ===========================
+    boolean existeCapacitacionPorNombre(String nombre);
+
+    boolean existeCapacitacionPorDescripcion(String descripcion);
 }

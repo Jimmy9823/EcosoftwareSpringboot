@@ -2,7 +2,7 @@ package com.EcoSoftware.Scrum6.Implement;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.time.LocalDate;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +22,7 @@ import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.CapacitacionDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.InscripcionDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.ModuloDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.ProgresoDTO;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.UploadResultDTO;
 import com.EcoSoftware.Scrum6.Entity.CapacitacionEntity;
 import com.EcoSoftware.Scrum6.Entity.InscripcionEntity;
 import com.EcoSoftware.Scrum6.Entity.ModuloEntity;
@@ -34,6 +35,7 @@ import com.EcoSoftware.Scrum6.Repository.ModuloRepository;
 import com.EcoSoftware.Scrum6.Repository.ProgresoRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
+import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
 
 @Service
 @Transactional
@@ -54,35 +56,188 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    /** Verificar si la capacitacion existe por nombre  o descripcion*/
+    @Override
+    public boolean existeCapacitacionPorNombre(String nombre) {
+        if (nombre == null || nombre.trim().isEmpty()) return false;
+        return capacitacionRepository.existsByNombreIgnoreCase(nombre.trim());
+    }
+
+    @Override
+    public boolean existeCapacitacionPorDescripcion(String descripcion) {
+        if (descripcion == null || descripcion.trim().isEmpty()) return false;
+        return capacitacionRepository.existsByDescripcionIgnoreCase(descripcion.trim());
+    }
+
+    // ============================
+    // UTIL: distancia de Levenshtein / similitud
+    // ============================
+    private int calcularDistanciaLevenshtein(String a, String b) {
+        if (a == null) a = "";
+        if (b == null) b = "";
+        a = a.toLowerCase();
+        b = b.toLowerCase();
+
+        int[] costs = new int[b.length() + 1];
+        for (int j = 0; j < costs.length; j++) {
+            costs[j] = j;
+        }
+        for (int i = 1; i <= a.length(); i++) {
+            costs[0] = i;
+            int nw = i - 1;
+            for (int j = 1; j <= b.length(); j++) {
+                int cj = Math.min(1 + Math.min(costs[j], costs[j - 1]),
+                        a.charAt(i - 1) == b.charAt(j - 1) ? nw : nw + 1);
+                nw = costs[j];
+                costs[j] = cj;
+            }
+        }
+        return costs[b.length()];
+    }
+
+    private boolean esSimilar(String a, String b) {
+        if (a == null || b == null) return false;
+        int distancia = calcularDistanciaLevenshtein(a, b);
+        int longitud = Math.max(a.length(), b.length());
+        if (longitud == 0) return true;
+        double similarity = 1.0 - ((double) distancia / longitud);
+        // Umbral configurable: 0.70 => 70% de similaridad o más
+        return similarity >= 0.70;
+    }
+
+    // ============================
+    // VALIDAR CAPACITACIONES DESDE EXCEL (retorna lista con observaciones)
+    // ============================
+    @Override
+    public List<CapacitacionDTO> validarCapacitacionesExcel(MultipartFile file) {
+        List<CapacitacionDTO> resultado = new ArrayList<>();
+        List<CapacitacionEntity> existentes = capacitacionRepository.findAll();
+
+        try (InputStream inputStream = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue; // Saltar encabezado
+
+                String nombre = getCellValue(row.getCell(0));
+                String descripcion = getCellValue(row.getCell(1));
+
+                // Ignorar filas sin nombre
+                if (nombre == null || nombre.isBlank()) continue;
+
+                boolean nombreExacto = existentes.stream()
+                        .anyMatch(c -> c.getNombre() != null && c.getNombre().equalsIgnoreCase(nombre));
+
+                boolean descripcionExacta = existentes.stream()
+                        .anyMatch(c -> c.getDescripcion() != null && c.getDescripcion().equalsIgnoreCase(descripcion));
+
+                boolean nombreSimilar = existentes.stream()
+                        .anyMatch(c -> c.getNombre() != null && esSimilar(c.getNombre(), nombre));
+
+                // Construir DTO con observación
+                CapacitacionDTO dto = new CapacitacionDTO();
+                dto.setNombre(nombre);
+                dto.setDescripcion(descripcion);
+
+                if (nombreExacto) {
+                    dto.setObservacion("ERROR: nombre repetido");
+                    resultado.add(dto);
+                    // Si es error por nombre exacto, no necesitamos añadir más observaciones para esta fila
+                    continue;
+                }
+
+                // Si descripción exacta -> warning
+                if (descripcionExacta) {
+                    dto.setObservacion("WARNING: descripción repetida");
+                    resultado.add(dto);
+                } else if (nombreSimilar) {
+                    dto.setObservacion("WARNING: nombre parecido a existente");
+                    resultado.add(dto);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error al validar el archivo Excel: " + e.getMessage(), e);
+        }
+
+        return resultado;
+    }
+
     /**
      * Carga masiva de capacitaciones desde un archivo Excel.
-     * Solo crea nuevas capacitaciones, no actualiza las existentes.
+     * Ahora devuelve un UploadResultDTO con detalles.
+     * Solo crea nuevas capacitaciones (no actualiza existentes).
      */
     @Override
-    public void cargarCapacitacionesDesdeExcel(MultipartFile file) {
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+    public UploadResultDTO cargarCapacitacionesDesdeExcel(MultipartFile file) {
+        List<CapacitacionDTO> validaciones = validarCapacitacionesExcel(file);
+
+        // Separar errores bloqueantes y warnings
+        List<CapacitacionDTO> errores = validaciones.stream()
+                .filter(d -> d.getObservacion() != null && d.getObservacion().startsWith("ERROR"))
+                .collect(Collectors.toList());
+
+        List<CapacitacionDTO> avisos = validaciones.stream()
+                .filter(d -> d.getObservacion() != null && d.getObservacion().startsWith("WARNING"))
+                .collect(Collectors.toList());
+
+        if (!errores.isEmpty()) {
+            // Construir mensaje con los nombres repetidos
+            String nombres = errores.stream()
+                    .map(CapacitacionDTO::getNombre)
+                    .collect(Collectors.toList())
+                    .toString();
+
+            // Lanzar excepción con la lista de duplicadas
+            throw new ValidacionCapacitacionException(
+                    "Se detectaron capacitaciones repetidas por nombre: " + nombres,
+                    errores
+            );
+        }
+
+        UploadResultDTO result = new UploadResultDTO();
+        int totalLeidas = 0;
+        int insertadas = 0;
+        int rechazadas = 0;
+
+        List<CapacitacionEntity> paraGuardar = new ArrayList<>();
+
+        try (InputStream inputStream = file.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
             Sheet sheet = workbook.getSheetAt(0);
             Iterator<Row> rows = sheet.iterator();
-            List<CapacitacionEntity> capacitaciones = new ArrayList<>();
-
-            // Saltar la primera fila (cabeceras)
-            if (rows.hasNext()) {
-                rows.next();
-            }
+            if (rows.hasNext()) rows.next(); // saltar encabezado
 
             while (rows.hasNext()) {
                 Row row = rows.next();
+                totalLeidas++;
 
-                // Leer columnas (en orden)
                 String nombre = getCellValue(row.getCell(0));
                 String descripcion = getCellValue(row.getCell(1));
                 String numeroDeClases = getCellValue(row.getCell(2));
                 String duracion = getCellValue(row.getCell(3));
                 String imagen = getCellValue(row.getCell(4));
 
-                // Validación básica: no agregar filas vacías
-                if (nombre == null || nombre.isBlank())
+                // Validación básica: nombre obligatorio
+                if (nombre == null || nombre.isBlank()) {
+                    rechazadas++;
                     continue;
+                }
+
+                // Verificación final por nombre (evita TOCTOU)
+                if (capacitacionRepository.existsByNombreIgnoreCase(nombre)) {
+                    CapacitacionDTO err = new CapacitacionDTO();
+                    err.setNombre(nombre);
+                    err.setDescripcion(descripcion);
+                    err.setObservacion("ERROR: nombre repetido (existente en BD en el momento de la carga)");
+                    List<CapacitacionDTO> listaErr = new ArrayList<>();
+                    listaErr.add(err);
+                    throw new ValidacionCapacitacionException(
+                            "Nombre repetido detectado durante la carga: [" + nombre + "]",
+                            listaErr
+                    );
+                }
 
                 CapacitacionEntity c = new CapacitacionEntity();
                 c.setNombre(nombre);
@@ -91,10 +246,24 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
                 c.setDuracion(duracion);
                 c.setImagen(imagen);
 
-                capacitaciones.add(c);
+                paraGuardar.add(c);
+                insertadas++;
             }
 
-            capacitacionRepository.saveAll(capacitaciones);
+            // Guardar todas las nuevas en batch
+            if (!paraGuardar.isEmpty()) {
+                capacitacionRepository.saveAll(paraGuardar);
+            }
+
+            result.setTotalFilasLeidas(totalLeidas);
+            result.setInsertadas(insertadas);
+            result.setRechazadas(rechazadas);
+            result.setWarnings(avisos.size());
+            result.setErrores(new ArrayList<>());
+            result.setAvisos(avisos);
+            result.setMensaje("Carga finalizada correctamente.");
+
+            return result;
 
         } catch (IOException e) {
             throw new RuntimeException("Error al procesar el archivo Excel", e);
@@ -133,22 +302,44 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     /**
+     *
      * Método auxiliar para leer valores de celda como String.
      */
     private String getCellValue(Cell cell) {
         if (cell == null)
             return null;
-        return switch (cell.getCellType()) {
-            case STRING -> cell.getStringCellValue().trim();
-            case NUMERIC -> String.valueOf((int) cell.getNumericCellValue());
-            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            default -> null;
-        };
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+                double d = cell.getNumericCellValue();
+                if (d == Math.floor(d)) {
+                    return String.valueOf((long) d);
+                } else {
+                    return String.valueOf(d);
+                }
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                try {
+                    return cell.getStringCellValue().trim();
+                } catch (Exception ex) {
+                    try {
+                        double dv = cell.getNumericCellValue();
+                        if (dv == Math.floor(dv)) return String.valueOf((long) dv);
+                        return String.valueOf(dv);
+                    } catch (Exception e) {
+                        return null;
+                    }
+                }
+            default:
+                return null;
+        }
     }
 
-    // ===========================
-    // CAPACITACION
-    // ===========================
+    // ============================
+    // CRUD Capacitacion (sin cambios lógicos, mapeos simples)
+    // ============================
     @Override
     public CapacitacionDTO crearCapacitacion(CapacitacionDTO dto) {
         CapacitacionEntity entidad = new CapacitacionEntity();
@@ -156,6 +347,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         entidad.setDescripcion(dto.getDescripcion());
         entidad.setNumeroDeClases(dto.getNumeroDeClases());
         entidad.setDuracion(dto.getDuracion());
+        entidad.setImagen(dto.getImagen());
         CapacitacionEntity saved = capacitacionRepository.save(entidad);
         dto.setId(saved.getId());
         return dto;
@@ -169,6 +361,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         entidad.setDescripcion(dto.getDescripcion());
         entidad.setNumeroDeClases(dto.getNumeroDeClases());
         entidad.setDuracion(dto.getDuracion());
+        entidad.setImagen(dto.getImagen());
         capacitacionRepository.save(entidad);
         dto.setId(entidad.getId());
         return dto;
@@ -189,6 +382,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         dto.setDescripcion(entidad.getDescripcion());
         dto.setNumeroDeClases(entidad.getNumeroDeClases());
         dto.setDuracion(entidad.getDuracion());
+        dto.setImagen(entidad.getImagen());
         return dto;
     }
 
@@ -201,13 +395,14 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
             dto.setDescripcion(entidad.getDescripcion());
             dto.setNumeroDeClases(entidad.getNumeroDeClases());
             dto.setDuracion(entidad.getDuracion());
+            dto.setImagen(entidad.getImagen());
             return dto;
         }).collect(Collectors.toList());
     }
 
-    // ===========================
-    // MODULO
-    // ===========================
+    // ============================
+    // Módulos (sin cambios funcionales)
+    // ============================
     @Override
     public ModuloDTO crearModulo(ModuloDTO dto) {
         ModuloEntity entidad = new ModuloEntity();
@@ -251,9 +446,6 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         }).collect(Collectors.toList());
     }
 
-    // ===========================
-    // CARGA MASIVA DE MÓDULOS
-    // ===========================
     @Override
     public byte[] generarPlantillaModulosExcel() {
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -276,9 +468,6 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         }
     }
 
-    // ===========================
-    // CARGA MASIVA DE MÓDULOS
-    // ===========================
     @Override
     public void cargarModulosDesdeExcel(Long capacitacionId, MultipartFile file) {
         CapacitacionEntity capacitacion = capacitacionRepository.findById(capacitacionId)
@@ -317,9 +506,9 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         }
     }
 
-    // ===========================
-    // INSCRIPCION
-    // ===========================
+    // ============================
+    // Inscripciones y Progreso (sin cambios)
+    // ============================
     @Override
     public InscripcionDTO inscribirse(Long usuarioId, Long cursoId) {
         UsuarioEntity usuario = usuarioRepository.findById(usuarioId)
@@ -331,7 +520,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         InscripcionEntity entidad = new InscripcionEntity();
         entidad.setUsuario(usuario);
         entidad.setCurso(curso);
-        entidad.setFechaDeInscripcion(LocalDate.now());
+        entidad.setFechaDeInscripcion(java.time.LocalDate.now());
         entidad.setEstadoCurso(EstadoCurso.Inscrito);
 
         InscripcionEntity saved = inscripcionRepository.save(entidad);
@@ -362,7 +551,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     @Override
-    public List<InscripcionDTO> listarInscripcionesPorUsuario(Long usuarioId) {
+    public java.util.List<InscripcionDTO> listarInscripcionesPorUsuario(Long usuarioId) {
         return inscripcionRepository.findByUsuario_IdUsuario(usuarioId).stream().map(entidad -> {
             InscripcionDTO dto = new InscripcionDTO();
             dto.setId(entidad.getId());
@@ -375,7 +564,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     @Override
-    public List<InscripcionDTO> listarInscripcionesPorCurso(Long cursoId) {
+    public java.util.List<InscripcionDTO> listarInscripcionesPorCurso(Long cursoId) {
         return inscripcionRepository.findByCursoId(cursoId).stream().map(entidad -> {
             InscripcionDTO dto = new InscripcionDTO();
             dto.setId(entidad.getId());
@@ -387,9 +576,6 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         }).collect(Collectors.toList());
     }
 
-    // ===========================
-    // PROGRESO
-    // ===========================
     @Override
     public ProgresoDTO registrarProgreso(ProgresoDTO dto) {
         UsuarioEntity usuario = usuarioRepository.findById(dto.getUsuarioId())
@@ -423,7 +609,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     @Override
-    public List<ProgresoDTO> listarProgresosPorUsuario(Long usuarioId) {
+    public java.util.List<ProgresoDTO> listarProgresosPorUsuario(Long usuarioId) {
         return progresoRepository.findByUsuario_IdUsuario(usuarioId).stream().map(entidad -> {
             ProgresoDTO dto = new ProgresoDTO();
             dto.setId(entidad.getId());
@@ -437,7 +623,7 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     @Override
-    public List<ProgresoDTO> listarProgresosPorCurso(Long cursoId) {
+    public java.util.List<ProgresoDTO> listarProgresosPorCurso(Long cursoId) {
         return progresoRepository.findByCursoId(cursoId).stream().map(entidad -> {
             ProgresoDTO dto = new ProgresoDTO();
             dto.setId(entidad.getId());

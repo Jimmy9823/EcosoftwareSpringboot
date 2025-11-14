@@ -3,6 +3,7 @@ package com.EcoSoftware.Scrum6.Controller;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
 import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
 import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
+import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -10,7 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/capacitaciones")
@@ -19,11 +22,7 @@ public class CapacitacionesController {
     @Autowired
     private CapacitacionesService capacitacionesService;
 
-    
-
-    // ===========================
-    // CAPACITACIONES
-    // ===========================
+    // CRUD simple
     @PostMapping
     public ResponseEntity<CapacitacionDTO> crearCapacitacion(@RequestBody CapacitacionDTO dto) {
         return ResponseEntity.ok(capacitacionesService.crearCapacitacion(dto));
@@ -31,7 +30,7 @@ public class CapacitacionesController {
 
     @PutMapping("/{id}")
     public ResponseEntity<CapacitacionDTO> actualizarCapacitacion(@PathVariable Long id,
-            @RequestBody CapacitacionDTO dto) {
+                                                                  @RequestBody CapacitacionDTO dto) {
         return ResponseEntity.ok(capacitacionesService.actualizarCapacitacion(id, dto));
     }
 
@@ -52,17 +51,33 @@ public class CapacitacionesController {
     }
 
     // ===========================
-    // CARGA MASIVA EXCEL
+    // EXCEL: Validar y Cargar
     // ===========================
-
-    // Subir archivo Excel
-    @PostMapping("/cargar-excel")
-    public ResponseEntity<String> cargarDesdeExcel(@RequestParam("file") MultipartFile file) {
-        capacitacionesService.cargarCapacitacionesDesdeExcel(file);
-        return ResponseEntity.ok("Capacitaciones cargadas correctamente.");
+    @PostMapping("/validar-excel")
+    public ResponseEntity<List<CapacitacionDTO>> validarCapacitacionesExcel(@RequestParam("file") MultipartFile file) {
+        List<CapacitacionDTO> duplicadas = capacitacionesService.validarCapacitacionesExcel(file);
+        return ResponseEntity.ok(duplicadas);
     }
 
-    // Descargar plantilla Excel
+    @PostMapping("/cargar-excel")
+    public ResponseEntity<?> cargarDesdeExcel(@RequestParam("file") MultipartFile file) {
+        try {
+            UploadResultDTO resultado = capacitacionesService.cargarCapacitacionesDesdeExcel(file);
+            return ResponseEntity.ok(resultado);
+        } catch (ValidacionCapacitacionException ex) {
+            // Si la excepción ocurre, devolvemos el mensaje y la lista de duplicadas
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", ex.getMessage());
+            body.put("duplicadas", ex.getDuplicadas());
+            return ResponseEntity.badRequest().body(body);
+        } catch (RuntimeException ex) {
+            // errores generales
+            Map<String, Object> body = new HashMap<>();
+            body.put("message", ex.getMessage());
+            return ResponseEntity.status(500).body(body);
+        }
+    }
+
     @GetMapping("/plantilla")
     public ResponseEntity<byte[]> descargarPlantilla() {
         byte[] archivo = capacitacionesService.generarPlantillaExcel();
@@ -72,9 +87,7 @@ public class CapacitacionesController {
                 .body(archivo);
     }
 
-    // ===========================
-    // MODULOS
-    // ===========================
+    // ========== MÓDULOS ==========
     @PostMapping("/modulos")
     public ResponseEntity<ModuloDTO> crearModulo(@RequestBody ModuloDTO dto) {
         return ResponseEntity.ok(capacitacionesService.crearModulo(dto));
@@ -96,11 +109,6 @@ public class CapacitacionesController {
         return ResponseEntity.ok(capacitacionesService.listarModulosPorCapacitacion(capacitacionId));
     }
 
-    // ===========================
-    // CARGA MASIVA DE MÓDULOS
-    // ===========================
-
-    // Descargar plantilla para módulos
     @GetMapping("/modulos/plantilla")
     public ResponseEntity<byte[]> descargarPlantillaModulos() {
         byte[] archivo = capacitacionesService.generarPlantillaModulosExcel();
@@ -110,7 +118,6 @@ public class CapacitacionesController {
                 .body(archivo);
     }
 
-    // Cargar módulos desde Excel
     @PostMapping("/{capacitacionId}/modulos/cargar-excel")
     public ResponseEntity<String> cargarModulosDesdeExcel(
             @PathVariable Long capacitacionId,
@@ -119,9 +126,7 @@ public class CapacitacionesController {
         return ResponseEntity.ok("Módulos cargados correctamente para la capacitación " + capacitacionId);
     }
 
-    // ===========================
-    // INSCRIPCIONES
-    // ===========================
+    // ========== INSCRIPCIONES ==========
     @PostMapping("/inscripciones")
     public ResponseEntity<InscripcionDTO> inscribirse(@RequestParam Long usuarioId, @RequestParam Long cursoId) {
         return ResponseEntity.ok(capacitacionesService.inscribirse(usuarioId, cursoId));
@@ -129,7 +134,7 @@ public class CapacitacionesController {
 
     @PutMapping("/inscripciones/{id}")
     public ResponseEntity<InscripcionDTO> actualizarEstadoInscripcion(@PathVariable Long id,
-            @RequestParam EstadoCurso estado) {
+                                                                      @RequestParam EstadoCurso estado) {
         return ResponseEntity.ok(capacitacionesService.actualizarEstadoInscripcion(id, estado));
     }
 
@@ -143,9 +148,7 @@ public class CapacitacionesController {
         return ResponseEntity.ok(capacitacionesService.listarInscripcionesPorCurso(cursoId));
     }
 
-    // ===========================
-    // PROGRESO
-    // ===========================
+    // ========== PROGRESO ==========
     @PostMapping("/progreso")
     public ResponseEntity<ProgresoDTO> registrarProgreso(@RequestBody ProgresoDTO dto) {
         return ResponseEntity.ok(capacitacionesService.registrarProgreso(dto));
