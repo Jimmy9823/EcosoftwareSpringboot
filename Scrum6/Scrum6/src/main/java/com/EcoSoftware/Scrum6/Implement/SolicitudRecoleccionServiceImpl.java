@@ -103,6 +103,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             // rol como String.
             correosRecicladores = usuarioRepository.findAll().stream()
                     .filter(u -> u.getRol() != null && "Reciclador".equals(u.getRol().getNombre()))
+                    .filter(u -> u.getRol() != null && "Empresa".equals(u.getRol().getNombre()))
                     .map(UsuarioEntity::getCorreo)
                     .collect(Collectors.toList());
         } catch (Exception e) {

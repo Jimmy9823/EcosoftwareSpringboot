@@ -1,35 +1,37 @@
 package com.EcoSoftware.Scrum6.Implement;
 
-import java.util.List;
 
+import com.EcoSoftware.Scrum6.Service.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import com.EcoSoftware.Scrum6.Service.EmailService;
+import java.util.List;
 
 @Service
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
     private String from;
 
-    public EmailServiceImpl(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
     @Override
-    public void enviarCorreo(String para, String asunto, String contenido) {
-        SimpleMailMessage mensaje = new SimpleMailMessage();
-        mensaje.setFrom(from);
-        mensaje.setTo(para);
-        mensaje.setSubject(asunto);
-        mensaje.setText(contenido);
-        mailSender.send(mensaje);
+    public void enviarCorreo(String to, String subject, String text) {
+        try {
+            SimpleMailMessage mensaje = new SimpleMailMessage();
+            mensaje.setFrom(from);
+            mensaje.setTo(to);
+            mensaje.setSubject(subject);
+            mensaje.setText(text);
+            mailSender.send(mensaje);
+        } catch (MailException e) {
+            System.err.println("Error al enviar email: " + e.getMessage());
+        }
     }
 
     @Override
@@ -38,15 +40,25 @@ public class EmailServiceImpl implements EmailService {
             return;
         }
 
-        for (String recipient : recipients) {
-            try {
-                // Reutiliza el método individual para asegurar que si uno falla, no detenga a los demás.
-                enviarCorreo(recipient, subject, text); 
-            } catch (MailException e) {
-                // Manejar o registrar el error para el destinatario específico
-                // En un entorno productivo, podrías usar un logger aquí.
-                System.err.println("Error al enviar correo masivo a: " + recipient + ". Motivo: " + e.getMessage());
-            }
+        try {
+            SimpleMailMessage mensaje = new SimpleMailMessage();
+            mensaje.setFrom(from);
+
+            // Convertir lista a array
+            String[] destinatariosArray = recipients.toArray(new String[0]);
+
+            // Destinatario "visible" (puede ser tu propio correo o el mismo 'from')
+            mensaje.setTo(from);
+
+            // TODOS los demás van en copia oculta
+            mensaje.setBcc(destinatariosArray);
+
+            mensaje.setSubject(subject);
+            mensaje.setText(text);
+
+            mailSender.send(mensaje);
+        } catch (MailException e) {
+            System.err.println("Error al enviar email masivo: " + e.getMessage());
         }
     }
 }
