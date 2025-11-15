@@ -7,10 +7,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+import jakarta.mail.internet.MimeMessage;
 @Service
 public class EmailServiceImpl implements EmailService {
 
@@ -21,6 +23,7 @@ public class EmailServiceImpl implements EmailService {
     private String from;
 
     @Override
+
     public void enviarCorreo(String to, String subject, String text) {
         try {
             SimpleMailMessage mensaje = new SimpleMailMessage();
