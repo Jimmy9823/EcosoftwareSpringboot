@@ -14,6 +14,9 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
 
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
@@ -49,6 +52,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     @Autowired
     private com.EcoSoftware.Scrum6.Service.EmailService emailService;
+
+    @Autowired
+private TemplateEngine templateEngine;
+
 
 
 
@@ -96,15 +103,23 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
     // Guardar el usuario
     UsuarioEntity saved = usuarioRepository.save(entity);
 
-    // Enviar correo de bienvenida
-    String asunto = "¡Bienvenido a EcoSoftware!";
-    String contenido = "Hola " + saved.getNombre() + ",\n\n"
-            + "Te damos la bienvenida a EcoSoftware, la plataforma para la gestión responsable de residuos.\n\n"
-            + "Tu cuenta ha sido creada exitosamente. Ahora puedes acceder y comenzar a contribuir al cuidado del medio ambiente.\n\n"
-            + "Si tienes dudas o necesitas ayuda, puedes contactarnos en cualquier momento.\n\n"
-            + "¡Gracias por unirte a nuestra comunidad!\n\n"
-            + "EcoSoftware - Gestión de Residuos";
-    emailService.enviarCorreo(saved.getCorreo(), asunto, contenido);
+    /** -----------------------------
+     *  ENVIAR CORREO CON PLANTILLA
+     * ------------------------------ */
+
+    // Crear contexto de Thymeleaf
+    Context context = new Context();
+    context.setVariable("nombre", saved.getNombre());
+
+    // Procesar plantilla
+    String html = templateEngine.process("email-bienvenida", context);
+
+    // Enviar correo HTML
+    emailService.enviarCorreo(
+            saved.getCorreo(),
+            "¡Bienvenido a EcoSoftware!",
+            html
+    );
 
     // Devolver el DTO sin exponer la contraseña
     UsuarioDTO result = modelMapper.map(saved, UsuarioDTO.class);
