@@ -4,52 +4,73 @@
   <meta charset="UTF-8" />
   <title>Bienvenido</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <style>
-    body { margin:0; padding:0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background:#f4f7f2; }
-    .card { max-width:600px; margin:36px auto; background:#fff; border-radius:12px; overflow:hidden;
-            box-shadow:0 8px 30px rgba(0,0,0,0.08); text-align:center; }
-    .header { background: linear-gradient(90deg, #5cb85c 0%, #4a934a 100%); padding:22px 16px; color:#fff; }
-    .logo-small { width:90px; height:90px; border-radius:50%; overflow:hidden; margin:0 auto 10px; background:#fff; display:flex; align-items:center; justify-content:center; }
-    .body { padding:28px 26px; color:#333; }
-    .photo-circle { width:120px; height:120px; border-radius:50%; object-fit:cover; display:block; margin: 0 auto 18px; border:4px solid #f4f7f2; box-shadow:0 6px 18px rgba(0,0,0,0.08); }
-    .greeting { font-size:18px; color:#333; margin:6px 0; }
-    .nombre { font-size:20px; color:#11998e; font-weight:700; margin-bottom:8px; }
-    .message { font-size:15px; color:#555; line-height:1.5; margin:12px 0 18px; }
-    .btn { display:inline-block; background: linear-gradient(90deg,#667eea 0%,#764ba2 100%); color:#fff; padding:10px 26px; border-radius:26px; text-decoration:none; font-weight:600; }
-    .footer { background:#fafafa; padding:14px; font-size:12px; color:#777; }
-    @media (max-width:420px){ .photo-circle{width:96px;height:96px} .card{margin:20px 12px} }
-  </style>
 </head>
-<body>
-  <div class="card">
-    <div class="header">
-      <!-- si quieres logo también: usar cid:logo -->
-      <div class="logo-small">
-        <strong style="color:#4a934a">Eco</strong>
-      </div>
-      <div style="font-size:18px; font-weight:600;">¡Bienvenido(a) a EcoSoft!</div>
+<body style="margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f6f6f6; padding:20px;">
+<div style="max-width: 600px; margin: auto; background:#ffffff; border-radius:18px; overflow:hidden;
+            box-shadow: 0 8px 24px rgba(46,204,113,0.12);">
+    
+    <!-- Header con gradiente -->
+    <div style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding:40px 30px; text-align:center;">
+        <h2 style="color:#ffffff; margin:24px 0 8px 0; font-size:26px; font-weight:600; letter-spacing:-0.5px;">
+            ¡Bienvenid@ a EcoSoftware!
+        </h2>
+        <p style="color:rgba(255,255,255,0.9); margin:0; font-size:20px;">
+            Felicidades, <strong th:text="${nombre}">Usuario</strong> 🌿
+        </p>
     </div>
-
-    <div class="body">
-      <!-- imagen circular (incrustada via cid) -->
-<img src="http://localhost:8082/img/bienvenida.png"
-     style="width:150px; height:150px; border-radius:50%;">
-      <!-- saludo + nombre -->
-      <div class="greeting"><strong>Felicidades,</strong></div>
-      <div class="nombre" th:text="${nombre}">Nombre Apellido</div>
-
-      <!-- frase corta: opcion 3 adaptada -->
-      <div class="message">
-        <strong>Ya eres un ecosofista.</strong><br/>
-        Hoy sembraste algo importante. Cada acción cuenta y la tuya ya empezó a generar impacto real.
-      </div>
-
-      <a th:href="${urlInicio}" class="btn">Entrar a la plataforma</a>
+    
+    <!-- Contenido -->
+    <div style="padding:40px 35px;">
+        <div style="background:#f8fff9; border-radius:12px; padding:28px; border:1px solid #e0f5e6; margin-bottom:28px; display:table; width:90%;">
+            <!-- Imagen a la izquierda -->
+            <div style="display:table-cell; vertical-align:middle; width:140px; padding-right:20px;">
+                <div style="width:120px; height:120px; background:#ffffff; border-radius:50%; 
+                            padding:8px; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+                    <img th:src="'cid:bienvenida-img'" 
+                         alt="Bienvenida"
+                         style="width:104px; height:104px; border-radius:50%; object-fit:cover;">
+                </div>
+            </div>
+            
+            <!-- Texto a la derecha -->
+            <div style="display:table-cell; vertical-align:middle;">
+                <h3 style="color:#2ecc71; font-size:20px; margin:0 0 12px 0; font-weight:600;">
+                    Ya eres un ecosofista
+                </h3>
+                <p style="font-size:15px; color:#666; margin:0; line-height:1.7;">
+                    Hoy sembraste algo importante. Cada acción cuenta y la tuya ya empezó a generar impacto real en nuestro planeta.
+                </p>
+            </div>
+        </div>
+        
+        <!-- Botón de acción -->
+        <div style="text-align:center; margin-bottom:28px;">
+            <a th:href="${urlInicio}" 
+               style="display:inline-block; background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%); 
+                      color:#ffffff; padding:14px 36px; border-radius:30px; text-decoration:none; 
+                      font-weight:600; font-size:15px; box-shadow:0 4px 16px rgba(46,204,113,0.3);">
+                Vamos a reciclar
+            </a>
+        </div>
+        
+        <!-- Mensaje inspirador -->
+        <div style="text-align:center; padding:24px; background:linear-gradient(135deg, #f0fff4 0%, #e8f8ea 100%); 
+                    border-radius:12px; border:2px dashed #2ecc71;">
+            <p style="margin:0; color:#2ecc71; font-size:16px; font-weight:600;">
+                🌱 Tu viaje verde comienza aquí
+            </p>
+            <p style="margin:8px 0 0 0; color:#666; font-size:13px;">
+                Juntos construimos un futuro más sostenible
+            </p>
+        </div>
     </div>
-
-    <div class="footer">
-      Gracias por unirte • EcoSoft © 2025
+    
+    <!-- Footer -->
+    <div style="padding:24px; text-align:center; background:#fafafa;">
+        <p style="margin:0; font-size:13px; color:#999;">
+            Gracias por unirte • EcoSoftware © 2025
+        </p>
     </div>
-  </div>
+</div>
 </body>
 </html>
