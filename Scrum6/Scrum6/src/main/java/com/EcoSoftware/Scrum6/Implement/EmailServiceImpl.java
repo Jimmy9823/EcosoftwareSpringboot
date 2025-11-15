@@ -39,21 +39,18 @@ public class EmailServiceImpl implements EmailService {
 
     @Override
     public void enviarCorreosMasivos(List<String> recipients, String subject, String text) {
-        if (recipients == null || recipients.isEmpty()) {
-            return;
-        }
+        if (recipients == null || recipients.isEmpty()) return;
 
         try {
             SimpleMailMessage mensaje = new SimpleMailMessage();
             mensaje.setFrom(from);
 
-            // Convertir lista a array
             String[] destinatariosArray = recipients.toArray(new String[0]);
 
-            // Destinatario "visible" (puede ser tu propio correo o el mismo 'from')
+            // Solo tú como destinatario visible
             mensaje.setTo(from);
 
-            // TODOS los demás van en copia oculta
+            // TODOS los demás ocultos
             mensaje.setBcc(destinatariosArray);
 
             mensaje.setSubject(subject);
@@ -61,7 +58,8 @@ public class EmailServiceImpl implements EmailService {
 
             mailSender.send(mensaje);
         } catch (MailException e) {
-            System.err.println("Error al enviar email masivo: " + e.getMessage());
+            System.err.println("Error al enviar email masivo (BCC): " + e.getMessage());
         }
     }
+
 }

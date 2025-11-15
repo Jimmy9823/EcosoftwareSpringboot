@@ -93,46 +93,45 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
      * UsuarioRepository.
      */
     private void notificarRecicladoresNuevaSolicitud(SolicitudRecoleccionEntity nuevaSolicitud) {
-        // 1. Obtener la lista de correos de los recicladores (Filtrando después de
-        // obtener todos)
         List<String> correosRecicladores;
 
         try {
-            // Obtenemos todos los usuarios y filtramos aquellos cuyo rol sea "RECICLADOR"
-            // Asume que UsuarioEntity.getRol().getNombre() existe y devuelve el nombre del
-            // rol como String.
             correosRecicladores = usuarioRepository.findAll().stream()
-                    .filter(u -> u.getRol() != null && "Reciclador".equals(u.getRol().getNombre()))
-                    .filter(u -> u.getRol() != null && "Empresa".equals(u.getRol().getNombre()))
+                    // Solo usuarios activos
+                    .filter(u -> Boolean.TRUE.equals(u.getEstado()))
+                    // Filtrar roles Reciclador o Empresa
+                    .filter(u -> {
+                        if (u.getRol() == null) return false;
+                        String rol = u.getRol().getNombre();
+                        return "Reciclador".equals(rol) || "Empresa".equals(rol);
+                    })
                     .map(UsuarioEntity::getCorreo)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            // Se captura cualquier error al acceder a la relación Rol o al campo nombre
-            System.err.println(
-                    "ERROR al obtener lista de recicladores para notificación masiva. Revise si la entidad UsuarioEntity tiene la relación correcta a RolEntity y si el campo del nombre del rol es 'nombre'. Mensaje: "
-                            + e.getMessage());
+            System.err.println("ERROR al obtener lista de usuarios para notificación. Mensaje: " + e.getMessage());
             return;
         }
 
         if (correosRecicladores.isEmpty()) {
-            System.out.println("No hay recicladores registrados para notificar.");
+            System.out.println("No hay recicladores o empresas activas para notificar.");
             return;
         }
 
-        String asunto = " ¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
-        String contenido = "Hola Reciclador,\n\n"
-                + "Se ha registrado una **nueva solicitud de recolección pendiente** que requiere tu atención:\n"
-                + " Tipo de residuo: " + nuevaSolicitud.getTipoResiduo() + "\n"
-                + " Localidad: " + nuevaSolicitud.getLocalidad() + "\n"
-                + " Fecha programada: "
-                + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A")
-                + "\n"
-                + " Por favor, accede al sistema para revisar y aceptar la solicitud.\n\n"
+        String asunto = "¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
+        String contenido = "Hola,\n\n"
+                + "Se ha registrado una nueva solicitud de recolección pendiente:\n"
+                + " • Tipo de residuo: " + nuevaSolicitud.getTipoResiduo() + "\n"
+                + " • Localidad: " + nuevaSolicitud.getLocalidad() + "\n"
+                + " • Fecha programada: "
+                + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada() : "N/A") + "\n\n"
+                + "Por favor ingresa al sistema para revisarla.\n\n"
                 + "EcoSoftware - Gestión de Residuos";
 
-        // 2. Usar el servicio de envío masivo
+        // ENVÍO MASIVO CON COPIA OCULTA
         emailService.enviarCorreosMasivos(correosRecicladores, asunto, contenido);
     }
+
+
 
     // ==========================================================
     // Métodos CRUD
