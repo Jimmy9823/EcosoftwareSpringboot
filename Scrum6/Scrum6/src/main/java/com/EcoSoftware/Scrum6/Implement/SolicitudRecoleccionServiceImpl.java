@@ -12,11 +12,13 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.thymeleaf.context.Context;
+import org.thymeleaf.TemplateEngine;
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
@@ -49,6 +51,10 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
+
+    @Autowired
+    private TemplateEngine templateEngine;
+    
 
     public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository,
             UsuarioRepository usuarioRepository, EmailService emailService) {
@@ -117,18 +123,31 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             return;
         }
 
-        String asunto = "¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
-        String contenido = "Hola,\n\n"
-                + "Se ha registrado una nueva solicitud de recolección pendiente:\n"
-                + " • Tipo de residuo: " + nuevaSolicitud.getTipoResiduo() + "\n"
-                + " • Localidad: " + nuevaSolicitud.getLocalidad() + "\n"
-                + " • Fecha programada: "
-                + (nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada() : "N/A") + "\n\n"
-                + "Por favor ingresa al sistema para revisarla.\n\n"
-                + "EcoSoftware - Gestión de Residuos";
+        
 
-        // ENVÍO MASIVO CON COPIA OCULTA
-        emailService.enviarCorreosMasivos(correosRecicladores, asunto, contenido);
+       // ------------------------------
+    // 1. Crear contexto Thymeleaf
+    // ------------------------------
+    Context context = new Context();
+    context.setVariable("nombre", nuevaSolicitud.getUsuario().getNombre());
+    context.setVariable("idSolicitud", nuevaSolicitud.getIdSolicitud());
+    context.setVariable("nombreSolicitante", nuevaSolicitud.getUsuario().getNombre());
+    context.setVariable("tipoResiduo", nuevaSolicitud.getTipoResiduo());
+    context.setVariable("localidad", nuevaSolicitud.getLocalidad());
+    context.setVariable("fechaProgramada",
+            nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A"
+    );
+
+    // ------------------------------
+    // 2. Procesar plantilla
+    // ------------------------------
+    String contenidoHtml = templateEngine.process("email-notificacionSolicitud", context);
+
+    // ------------------------------
+    // 3. Enviar correo masivo HTML
+    // ------------------------------
+    String asunto = "¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
+    emailService.enviarCorreosMasivos(correosRecicladores, asunto, contenidoHtml);
     }
 
 
@@ -156,23 +175,36 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         SolicitudRecoleccionEntity saved = solicitudRepository.save(entity);
 
-        // Envío de correo al usuario solicitante (individual)
-        String asunto = " Solicitud registrada correctamente";
-        String contenido = "Hola " + usuario.getNombre() + ",\n\n"
-                + "Tu solicitud de recolección ha sido registrada exitosamente con el ID: " + saved.getIdSolicitud()
-                + "\n\n"
-                + " Tipo de residuo: " + entity.getTipoResiduo() + "\n"
-                + " Cantidad: " + entity.getCantidad() + "\n"
-                + " Ubicación: " + entity.getUbicacion() + "\n"
-                + " Fecha programada: "
-                + (entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A") + "\n\n"
-                + "Gracias por contribuir al cuidado del medio ambiente.\n\n"
-                + "EcoSoftware - Gestión de Residuos";
-        emailService.enviarCorreo(usuario.getCorreo(), asunto, contenido);
+      
 
-        notificarRecicladoresNuevaSolicitud(saved);
+        // 3. Preparar plantilla Thymeleaf
+    Context context = new Context();
+    context.setVariable("nombre", usuario.getNombre());
+    context.setVariable("idSolicitud", saved.getIdSolicitud());
+    context.setVariable("estado", saved.getEstadoPeticion().name());
+    context.setVariable("tipoResiduo", entity.getTipoResiduo());
+    context.setVariable("cantidad", entity.getCantidad());
+    context.setVariable("descripcion", entity.getDescripcion());
+    context.setVariable("localidad", entity.getLocalidad());
+    context.setVariable("ubicacion", entity.getUbicacion());
+    context.setVariable("fechaProgramada", 
+        entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A"
+    );
+    context.setVariable("fechaCreacion", 
+        saved.getFechaCreacionSolicitud() != null ? saved.getFechaCreacionSolicitud().toString() : "N/A"
+    );
 
-        return entityToDTO(saved);
+    String contenidoHtml = templateEngine.process("email-registroSolicitud", context);
+
+    // 4. Enviar correo HTML
+    String asunto = "Solicitud registrada correctamente";
+    emailService.enviarCorreo(usuario.getCorreo(), asunto, contenidoHtml);
+
+    // 5. Notificar a los recicladores
+    notificarRecicladoresNuevaSolicitud(saved);
+
+    // 6. Devolver DTO
+    return entityToDTO(saved);
     }
 
     @Override
@@ -228,18 +260,24 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         // Guardar la solicitud (asumiendo CascadeType.ALL para RecoleccionEntity)
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
 
-        // 3. Notificar al usuario (creador de la solicitud)
-        UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
-        String asunto = "Solicitud de recolección aceptada";
-        String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
-                + "¡Buenas noticias! Tu solicitud de recolección (ID: " + solicitud.getIdSolicitud()
-                + ") ha sido **Aceptada**.\n\n"
-                + " Recolector asignado: " + recolector.getNombre() + "\n"
-                + " Fecha programada: "
-                + (solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A") + "\n"
-                + "Por favor, espera la recolección.\n\n"
-                + "EcoSoftware - Gestión de Residuos";
-        emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
+      
+    UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
+
+    // Preparamos plantilla HTML
+    Context context = new Context();
+    context.setVariable("nombre", usuarioSolicitante.getNombre());
+    context.setVariable("idSolicitud", solicitud.getIdSolicitud());
+    context.setVariable("nombreRecolector", recolector.getNombre());
+    context.setVariable("estadoPeticion", solicitud.getEstadoPeticion().name());
+    context.setVariable("fechaProgramada",
+            solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A"
+    );
+
+    String contenidoHtml = templateEngine.process("email-aceptaSolicitud", context);
+
+    // Enviamos correo HTML
+    String asunto = "Tu solicitud de recolección ha sido aceptada";
+    emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenidoHtml);
 
         return entityToDTO(saved);
     }

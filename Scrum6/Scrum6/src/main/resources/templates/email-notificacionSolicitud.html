@@ -2,94 +2,123 @@
 <html lang="es" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nueva Solicitud</title>
 </head>
-<body style="margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f6f6f6; padding:20px;">
-<div style="max-width: 600px; margin: auto; background:#ffffff; border-radius:18px; overflow:hidden;
+<body style="margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color:#f6f6f6; padding:0;">
+<div style="max-width: 600px; margin: 0 auto; background:#ffffff; border-radius:18px; overflow:hidden;
             box-shadow: 0 8px 24px rgba(46,204,113,0.12);">
     
     <!-- Header con gradiente -->
-    <div style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding:40px 30px; text-align:center;">
-        
-        <h2 style="color:#ffffff; margin:24px 0 8px 0; font-size:26px; font-weight:600; letter-spacing:-0.5px;">
+    <div style="background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); padding:30px 20px; text-align:center;">
+        <div style="width:100px; height:100px; margin:0 auto; background:#ffffff; border-radius:50%; 
+                    padding:6px; box-shadow:0 8px 24px rgba(0,0,0,0.15);">
+            <img th:src="'cid:nueva-solicitud-img'" 
+                 style="width:88px; height:88px; border-radius:50%; object-fit:cover; display:block;">
+        </div>
+        <h2 style="color:#ffffff; margin:20px 0 8px 0; font-size:22px; font-weight:600; letter-spacing:-0.5px;">
             🔔 Nueva Solicitud Disponible
         </h2>
-        <p style="color:rgba(255,255,255,0.9); margin:0; font-size:16px;">
-            Hola <strong th:text="${nombreReciclador}">Reciclador</strong>
+        <p style="color:rgba(255,255,255,0.9); margin:0; font-size:15px;">
+            Hola <strong th:text="${nombre}">Reciclador</strong>
         </p>
     </div>
     
     <!-- Contenido -->
-    <div style="padding:40px 35px;">
-        <p style="font-size:15px; color:#666; margin:0 0 32px 0; line-height:1.7; text-align:center;">
+    <div style="padding:30px 20px;">
+        <p style="font-size:14px; color:#666; margin:0 0 25px 0; line-height:1.7; text-align:center;">
             Se ha registrado una nueva solicitud de recolección que está esperando ser aceptada. ¡Revisa los detalles!
         </p>
         
         <!-- Información del solicitante -->
-        <div style="background:#fff8e1; border-radius:12px; padding:20px 24px; border-left:4px solid #ffc107; margin-bottom:20px;">
-            <p style="margin:0; font-size:15px; color:#333;">
+        <div style="background:#fff8e1; border-radius:12px; padding:15px 18px; border-left:4px solid #ffc107; margin-bottom:18px;">
+            <p style="margin:0; font-size:14px; color:#333;">
                 <span style="color:#f57c00; font-weight:600;">👤 Solicitante:</span> 
-                <span th:text="${nombreSolicitante}">María González</span>
+                <span th:text="${nombreSolicitante}"></span>
             </p>
         </div>
         
         <!-- Detalles de la solicitud -->
-        <div style="background:#f8fff9; border-radius:12px; padding:24px; border:1px solid #e0f5e6; margin-bottom:28px;">
-            <h3 style="color:#2ecc71; font-size:16px; margin:0 0 18px 0; font-weight:600;">
+        <div style="background:#f8fff9; border-radius:12px; padding:18px; border:1px solid #e0f5e6; margin-bottom:25px;">
+            <h3 style="color:#2ecc71; font-size:15px; margin:0 0 12px 0; font-weight:600;">
                 📋 Detalles de la Solicitud
             </h3>
             
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">ID de Solicitud:</span> 
-                <span th:text="${idSolicitud}">#12345</span>
-            </p>
-            
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Tipo de Residuo:</span> 
-                <span th:text="${tipoResiduo}">Plástico</span>
-            </p>
-            
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Cantidad:</span> 
-                <span th:text="${cantidad}">5 kg</span>
-            </p>
-            
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Descripción:</span> 
-                <span th:text="${descripcion}">Botellas PET limpias</span>
-            </p>
-            
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Localidad:</span> 
-                <span th:text="${localidad}">Chapinero</span>
-            </p>
-            
-            <p style="margin:0 0 12px 0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Ubicación:</span> 
-                <span th:text="${ubicacion}">Calle 60 #10-20</span>
-            </p>
-            
-            <p style="margin:0; font-size:15px; color:#333; line-height:1.6;">
-                <span style="color:#2ecc71; font-weight:600;">Fecha Programada:</span> 
-                <span th:text="${fechaProgramada}">15/11/2025 10:00</span>
-            </p>
+            <table style="width:100%; border-collapse:collapse;">
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; width:40%;">
+                        ID:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; word-break:break-word;">
+                        <span th:text="${idSolicitud}">#12345</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Residuo:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef; word-break:break-word;">
+                        <span th:text="${tipoResiduo}"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Cantidad:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef;">
+                        <span th:text="${cantidad}"></span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Descripción:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef; word-break:break-word;">
+                        <span th:text="${descripcion}">Botellas PET</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Localidad:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef; word-break:break-word;">
+                        <span th:text="${localidad}">Chapinero</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Ubicación:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef; word-break:break-word;">
+                        <span th:text="${ubicacion}">Calle 60 #10-20</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding:6px 0; font-size:14px; color:#2ecc71; font-weight:600; vertical-align:top; border-top:1px solid #e9ecef;">
+                        Fecha:
+                    </td>
+                    <td style="padding:6px 0; font-size:14px; color:#333; text-align:right; border-top:1px solid #e9ecef;">
+                        <span th:text="${fechaProgramada}">15/11/2025 10:00</span>
+                    </td>
+                </tr>
+            </table>
         </div>
         
         <!-- Llamado a la acción -->
-        <div style="text-align:center; padding:28px; background:linear-gradient(135deg, #f0fff4 0%, #e8f8ea 100%); 
+        <div style="text-align:center; padding:20px 18px; background:linear-gradient(135deg, #f0fff4 0%, #e8f8ea 100%); 
                     border-radius:12px; border:2px dashed #2ecc71;">
-            <p style="margin:0 0 12px 0; color:#2ecc71; font-size:18px; font-weight:600;">
+            <p style="margin:0 0 8px 0; color:#2ecc71; font-size:16px; font-weight:600;">
                 ⚡ ¡Actúa rápido!
             </p>
-            <p style="margin:0; color:#666; font-size:14px; line-height:1.6;">
+            <p style="margin:0; color:#666; font-size:13px; line-height:1.6;">
                 Ingresa al sistema para revisar y aceptar esta solicitud antes que otros recolectores.
             </p>
         </div>
     </div>
     
     <!-- Footer -->
-    <div style="padding:24px; text-align:center; background:#fafafa;">
-        <p style="margin:0; font-size:13px; color:#999;">
+    <div style="padding:20px; text-align:center; background:#fafafa;">
+        <p style="margin:0; font-size:12px; color:#999;">
             EcoSoftware © 2025
         </p>
     </div>
