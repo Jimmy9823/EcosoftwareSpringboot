@@ -2,6 +2,7 @@ package com.EcoSoftware.Scrum6.Controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -151,6 +152,18 @@ public class UsuarioController {
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=usuarios.pdf");
         usuarioService.exportUsuariosToPDF(nombre, correo, documento, response.getOutputStream());
+    }
+
+    @GetMapping("/graficos/usuarios-localidad-rol")
+    public ResponseEntity<Map<String, Map<String, Long>>> graficoLocalidadesRoles() {
+        Map<String, Map<String, Long>> datos = usuarioService.obtenerUsuariosPorLocalidadYRol();
+        return ResponseEntity.ok(datos);
+    }
+
+    @GetMapping("/estadisticas/barrios-localidades")
+    public ResponseEntity<List<Object[]>> obtenerUsuariosPorBarriosLocalidades() {
+        List<Object[]> datos = usuarioService.obtenerUsuariosPorBarrioYLocalidad();
+        return ResponseEntity.ok(datos);
     }
 
 }

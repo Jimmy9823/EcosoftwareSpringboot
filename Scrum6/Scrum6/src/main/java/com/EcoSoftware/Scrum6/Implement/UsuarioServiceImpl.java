@@ -3,7 +3,9 @@ package com.EcoSoftware.Scrum6.Implement;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.poi.ss.usermodel.Row;
@@ -228,6 +230,11 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
     }
 
     // ==============================
+    // Exportar usuarios a CSV
+    // ==============================
+
+
+    // ==============================
     // Exportar usuarios a Excel
     // ==============================
     @Override
@@ -324,4 +331,41 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
         document.add(table);
         document.close();
     }
+
+
+    @Override
+    public Map<String, Map<String, Long>> obtenerUsuariosPorLocalidadYRol() {
+
+        List<UsuarioEntity> usuarios = usuarioRepository.findByEstadoTrue();
+
+        Map<String, Map<String, Long>> resultado = new HashMap<>();
+
+        for (UsuarioEntity u : usuarios) {
+
+            // Filtrar solo roles válidos
+            String rol = u.getRol().getNombre();
+            if (!rol.equalsIgnoreCase("Ciudadano")
+                    && !rol.equalsIgnoreCase("Empresa")
+                    && !rol.equalsIgnoreCase("Reciclador")) {
+                continue;
+            }
+
+            String localidad = u.getLocalidad();
+            if (localidad == null) continue;
+
+            resultado.putIfAbsent(localidad, new HashMap<>());
+            Map<String, Long> conteos = resultado.get(localidad);
+
+            conteos.put(rol, conteos.getOrDefault(rol, 0L) + 1);
+        }
+
+        return resultado;
+    }
+
+    @Override
+    public List<Object[]> obtenerUsuariosPorBarrioYLocalidad() {
+        return usuarioRepository.contarUsuariosPorBarrioYLocalidad();
+    }
+
+
 }

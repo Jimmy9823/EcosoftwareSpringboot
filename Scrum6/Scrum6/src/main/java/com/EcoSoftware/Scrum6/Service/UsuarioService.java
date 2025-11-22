@@ -3,6 +3,7 @@ package com.EcoSoftware.Scrum6.Service;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Map;
 
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
@@ -29,8 +30,16 @@ public interface UsuarioService {
     // ================================
     //  MÉTODOS EXPORTACIÓN
     // ================================
+
+    // Graficas de usuarios por localidad y rol
+    Map<String, Map<String, Long>> obtenerUsuariosPorLocalidadYRol();
+    List<Object[]> obtenerUsuariosPorBarrioYLocalidad();
+
+
+    // Exportar usuarios a Excel y PDF con filtros opcionales
     void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os) throws IOException;
 
     void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os) throws IOException, DocumentException;
+
 }
 
