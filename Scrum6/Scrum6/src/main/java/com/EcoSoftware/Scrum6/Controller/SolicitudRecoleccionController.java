@@ -49,12 +49,11 @@ public class SolicitudRecoleccionController {
         return ResponseEntity.ok(solicitudService.obtenerRechazadasPorMotivo());
     }
 
-    // Top 5 motivos de rechazo con cantidad de solicitudes
-    @GetMapping("/graficos/top5-motivos-rechazo")
-    public ResponseEntity<List<Object[]>> getTop5MotivosRechazoConCantidad() {
-        List<Object[]> motivosConCantidad = solicitudService.obtenerRechazadasPorMotivo();
-        List<Object[]> top5 = motivosConCantidad.stream().limit(5).toList();
-        return ResponseEntity.ok(top5);
+  
+    // Solicitudes por localidad
+    @GetMapping("/graficos/solicitudes-por-localidad")
+    public ResponseEntity<List<Object[]>> getSolicitudesPorLocalidad() {
+        return ResponseEntity.ok(solicitudService.obtenerSolicitudesPorLocalidad());
     }
 
 

@@ -54,12 +54,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return solicitudRepository.obtenerRechazadasAgrupadasPorMotivo();
     }
 
-    @Override
-    public List<String> obtenerTop5MotivosRechazo() {
-        // Usar Pageable para limitar a 5 resultados
-        org.springframework.data.domain.Pageable top5 = org.springframework.data.domain.PageRequest.of(0, 5);
-        return solicitudRepository.findTop5MotivosRechazo(top5);
-    }
+
 
     @Override
     public Long contarAceptadas() {
@@ -69,6 +64,11 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     @Override
     public Long contarPendientes() {
         return solicitudRepository.countPendientes();
+    }
+
+    @Override
+    public List<Object[]> obtenerSolicitudesPorLocalidad() {
+        return solicitudRepository.obtenerSolicitudesPorLocalidad();
     }
 
     private final SolicitudRecoleccionRepository solicitudRepository;

@@ -55,13 +55,13 @@ public interface SolicitudRecoleccionService {
     // Obtener estadísticas de solicitudes rechazadas agrupadas por motivo de rechazo
     List<Object[]> obtenerRechazadasPorMotivo();
 
-    // Obtener los motivos de rechazo únicos (máximo 5) para el select
-    List<String> obtenerTop5MotivosRechazo();
-
     // Contar solicitudes aceptadas
     Long contarAceptadas();
 
     // Contar solicitudes pendientes
     Long contarPendientes();
+
+    // Obtener solicitudes agrupadas por localidad
+    List<Object[]> obtenerSolicitudesPorLocalidad();
 
 }

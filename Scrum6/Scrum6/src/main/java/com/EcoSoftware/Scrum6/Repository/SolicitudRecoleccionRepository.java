@@ -41,10 +41,6 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     @org.springframework.data.jpa.repository.Query("SELECT s.motivoRechazo, COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada GROUP BY s.motivoRechazo")
     List<Object[]> obtenerRechazadasAgrupadasPorMotivo();
 
-    // Obtener los motivos de rechazo únicos (máximo 5)
-    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT s.motivoRechazo FROM SolicitudRecoleccionEntity s WHERE s.motivoRechazo IS NOT NULL")
-    List<String> findTop5MotivosRechazo(org.springframework.data.domain.Pageable pageable);
-
     // Contar solicitudes aceptadas
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Aceptada")
     Long countAceptadas();
@@ -52,5 +48,9 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     // Contar solicitudes pendientes
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Pendiente")
     Long countPendientes();
+
+    // Solicitudes por localidad
+    @org.springframework.data.jpa.repository.Query("SELECT s.localidad, COUNT(s) FROM SolicitudRecoleccionEntity s GROUP BY s.localidad")
+    List<Object[]> obtenerSolicitudesPorLocalidad();
     
 }
