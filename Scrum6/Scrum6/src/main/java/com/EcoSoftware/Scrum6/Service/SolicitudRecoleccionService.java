@@ -1,15 +1,15 @@
 package com.EcoSoftware.Scrum6.Service;
 
 // Importaciones necesarias para la interfaz del servicio
-import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
-import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
-import com.EcoSoftware.Scrum6.Enums.Localidad;
-import com.itextpdf.text.DocumentException;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.itextpdf.text.DocumentException;
 
 /**
  * Interfaz que define los métodos del servicio de solicitudes de recolección.
@@ -51,4 +51,17 @@ public interface SolicitudRecoleccionService {
                            LocalDateTime fechaInicio,
                            LocalDateTime fechaFin,
                            OutputStream os) throws IOException, DocumentException;
+
+    // Obtener estadísticas de solicitudes rechazadas agrupadas por motivo de rechazo
+    List<Object[]> obtenerRechazadasPorMotivo();
+
+    // Obtener los motivos de rechazo únicos (máximo 5) para el select
+    List<String> obtenerTop5MotivosRechazo();
+
+    // Contar solicitudes aceptadas
+    Long contarAceptadas();
+
+    // Contar solicitudes pendientes
+    Long contarPendientes();
+
 }

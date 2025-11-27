@@ -1,13 +1,14 @@
 package com.EcoSoftware.Scrum6.Repository;
 
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import com.EcoSoftware.Scrum6.Enums.Localidad;
 import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudRecoleccionEntity, Long> {
@@ -33,4 +34,23 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     // Buscar solicitudes por localidad y tipo de residuo
     List<SolicitudRecoleccionEntity> findByLocalidadAndTipoResiduo(Localidad localidad, TipoResiduo tipoResiduo);
     List<SolicitudRecoleccionEntity> findByLocalidadAndEstadoPeticion(Localidad localidad, EstadoPeticion estadoPeticion);
+
+    // crear graficos 
+
+    // Consulta agrupada por motivo de rechazo
+    @org.springframework.data.jpa.repository.Query("SELECT s.motivoRechazo, COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada GROUP BY s.motivoRechazo")
+    List<Object[]> obtenerRechazadasAgrupadasPorMotivo();
+
+    // Obtener los motivos de rechazo únicos (máximo 5)
+    @org.springframework.data.jpa.repository.Query("SELECT DISTINCT s.motivoRechazo FROM SolicitudRecoleccionEntity s WHERE s.motivoRechazo IS NOT NULL")
+    List<String> findTop5MotivosRechazo(org.springframework.data.domain.Pageable pageable);
+
+    // Contar solicitudes aceptadas
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Aceptada")
+    Long countAceptadas();
+
+    // Contar solicitudes pendientes
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Pendiente")
+    Long countPendientes();
+    
 }

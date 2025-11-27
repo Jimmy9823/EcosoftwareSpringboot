@@ -17,8 +17,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.context.Context;
 import org.thymeleaf.TemplateEngine;
+import org.thymeleaf.context.Context;
+
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
@@ -47,6 +48,28 @@ import com.itextpdf.text.pdf.PdfWriter;
 @Service
 @Transactional
 public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionService {
+    // ===================== MÉTODOS PARA GRÁFICOS =====================
+    @Override
+    public List<Object[]> obtenerRechazadasPorMotivo() {
+        return solicitudRepository.obtenerRechazadasAgrupadasPorMotivo();
+    }
+
+    @Override
+    public List<String> obtenerTop5MotivosRechazo() {
+        // Usar Pageable para limitar a 5 resultados
+        org.springframework.data.domain.Pageable top5 = org.springframework.data.domain.PageRequest.of(0, 5);
+        return solicitudRepository.findTop5MotivosRechazo(top5);
+    }
+
+    @Override
+    public Long contarAceptadas() {
+        return solicitudRepository.countAceptadas();
+    }
+
+    @Override
+    public Long contarPendientes() {
+        return solicitudRepository.countPendientes();
+    }
 
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;

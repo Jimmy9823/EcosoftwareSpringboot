@@ -2,15 +2,29 @@ package com.EcoSoftware.Scrum6.Entity;
 
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+
 import org.hibernate.annotations.CreationTimestamp;
-import jakarta.persistence.*;
+
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import com.EcoSoftware.Scrum6.Enums.Localidad;
-import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
-import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 
 @Entity
 @Data
@@ -74,5 +88,9 @@ public class SolicitudRecoleccionEntity {
     // Relación con la recolección generada (si llega a aceptarse)
     @OneToOne(mappedBy = "solicitud", cascade = CascadeType.ALL, orphanRemoval = true)
     private RecoleccionEntity recoleccion;
+    //columna motivo rechazo para el estado rechazado
+    @Column(name = "motivo_rechazo")
+    private String motivoRechazo;
+
 
 }

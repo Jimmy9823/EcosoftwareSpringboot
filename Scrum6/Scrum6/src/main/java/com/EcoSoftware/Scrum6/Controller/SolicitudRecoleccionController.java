@@ -1,21 +1,30 @@
 package com.EcoSoftware.Scrum6.Controller;
 
-import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
-import com.EcoSoftware.Scrum6.Enums.Localidad;
-import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
-import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
-import com.itextpdf.text.DocumentException;
-import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
+import com.itextpdf.text.DocumentException;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Controlador REST que gestiona las operaciones relacionadas con las solicitudes de recolección.
@@ -24,6 +33,31 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/solicitudes")
 public class SolicitudRecoleccionController {
+        // Cantidad de pendientes y aceptadas 
+        @GetMapping("/graficos/pendientes-aceptadas")
+        public ResponseEntity<java.util.Map<String, Long>> getPendientesYAceptadas() {
+            java.util.Map<String, Long> result = new java.util.HashMap<>();
+            result.put("pendientes", solicitudService.contarPendientes());
+            result.put("aceptadas", solicitudService.contarAceptadas());
+            return ResponseEntity.ok(result);
+        }
+    // ===================== ENDPOINTS PARA GRÁFICOS =====================
+
+    // Motivos de rechazo y cantidad
+    @GetMapping("/graficos/rechazadas-por-motivo")
+    public ResponseEntity<List<Object[]>> getRechazadasPorMotivo() {
+        return ResponseEntity.ok(solicitudService.obtenerRechazadasPorMotivo());
+    }
+
+    // Top 5 motivos de rechazo con cantidad de solicitudes
+    @GetMapping("/graficos/top5-motivos-rechazo")
+    public ResponseEntity<List<Object[]>> getTop5MotivosRechazoConCantidad() {
+        List<Object[]> motivosConCantidad = solicitudService.obtenerRechazadasPorMotivo();
+        List<Object[]> top5 = motivosConCantidad.stream().limit(5).toList();
+        return ResponseEntity.ok(top5);
+    }
+
+
 
     // Inyección del servicio que maneja la lógica de negocio
     private final SolicitudRecoleccionService solicitudService;

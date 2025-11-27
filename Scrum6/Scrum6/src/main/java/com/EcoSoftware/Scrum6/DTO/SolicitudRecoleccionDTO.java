@@ -1,12 +1,13 @@
 package com.EcoSoftware.Scrum6.DTO;
 
-import com.EcoSoftware.Scrum6.Enums.Localidad;
-import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
-import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
-import lombok.Data;
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
+
+import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
+import com.EcoSoftware.Scrum6.Enums.Localidad;
+import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
+
+import lombok.Data;
 
 @Data
 public class SolicitudRecoleccionDTO {
@@ -25,4 +26,6 @@ public class SolicitudRecoleccionDTO {
     private LocalDateTime fechaProgramada;
 
     private Long recoleccionId;      // Relación con la recolección generada
+    private String motivoRechazo;// Motivo de rechazo si la solicitud es rechazada
+
 }
