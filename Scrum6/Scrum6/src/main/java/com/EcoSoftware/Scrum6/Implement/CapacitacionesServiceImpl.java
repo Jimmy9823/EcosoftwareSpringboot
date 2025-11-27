@@ -670,6 +670,6 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
             dto.setModulosCompletados(entidad.getModulosCompletados());
             dto.setTiempoInvertido(entidad.getTiempoInvertido());
             return dto;
-        }).collect(Collectors.toList());
+        }).collect(Collectors.toList ());
     }
 }
