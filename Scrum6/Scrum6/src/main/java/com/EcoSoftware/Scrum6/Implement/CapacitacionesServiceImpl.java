@@ -29,13 +29,13 @@ import com.EcoSoftware.Scrum6.Entity.ModuloEntity;
 import com.EcoSoftware.Scrum6.Entity.ProgresoEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
+import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
 import com.EcoSoftware.Scrum6.Repository.CapacitacionRepository;
 import com.EcoSoftware.Scrum6.Repository.InscripcionRepository;
 import com.EcoSoftware.Scrum6.Repository.ModuloRepository;
 import com.EcoSoftware.Scrum6.Repository.ProgresoRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
-import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
 
 @Service
 @Transactional
