@@ -56,6 +56,12 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private com.EcoSoftware.Scrum6.Service.EmailService emailService;
+
+    @Autowired
+    private org.thymeleaf.TemplateEngine templateEngine;
+
     /** Verificar si la capacitacion existe por nombre  o descripcion*/
     @Override
     public boolean existeCapacitacionPorNombre(String nombre) {
@@ -531,6 +537,20 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         dto.setUsuarioId(usuario.getIdUsuario());
         dto.setEstadoCurso(saved.getEstadoCurso());
         dto.setFechaDeInscripcion(saved.getFechaDeInscripcion());
+        // Enviar correo de confirmación al usuario
+        try {
+            org.thymeleaf.context.Context ctx = new org.thymeleaf.context.Context();
+            ctx.setVariable("nombreUsuario", usuario.getNombre());
+            ctx.setVariable("nombreCurso", curso.getNombre());
+            ctx.setVariable("fechaInscripcion", saved.getFechaDeInscripcion().toString());
+
+            String contenido = templateEngine.process("email-inscripcion", ctx);
+            String asunto = "Confirmación de inscripción: " + curso.getNombre();
+            emailService.enviarCorreo(usuario.getCorreo(), asunto, contenido);
+        } catch (Exception e) {
+            System.err.println("Error enviando correo de inscripción: " + e.getMessage());
+        }
+
         return dto;
     }
 
@@ -547,6 +567,23 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         dto.setUsuarioId(entidad.getUsuario().getIdUsuario());
         dto.setEstadoCurso(entidad.getEstadoCurso());
         dto.setFechaDeInscripcion(entidad.getFechaDeInscripcion());
+
+        // Enviar notificación al usuario sobre el cambio de estado
+        try {
+            UsuarioEntity usuario = entidad.getUsuario();
+            CapacitacionEntity curso = entidad.getCurso();
+            org.thymeleaf.context.Context ctx = new org.thymeleaf.context.Context();
+            ctx.setVariable("nombreUsuario", usuario.getNombre());
+            ctx.setVariable("nombreCurso", curso.getNombre());
+            ctx.setVariable("nuevoEstado", entidad.getEstadoCurso().name());
+
+            String contenido = templateEngine.process("email-estadoInscripcion", ctx);
+            String asunto = "Actualización de su inscripción: " + curso.getNombre();
+            emailService.enviarCorreo(usuario.getCorreo(), asunto, contenido);
+        } catch (Exception e) {
+            System.err.println("Error enviando correo de actualización de inscripción: " + e.getMessage());
+        }
+
         return dto;
     }
 
