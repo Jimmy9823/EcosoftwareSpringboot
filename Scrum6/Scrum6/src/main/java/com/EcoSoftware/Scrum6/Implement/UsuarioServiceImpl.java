@@ -193,65 +193,90 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
     //         CARGAR ARCHIVO EXCEL POR ROL
     // ========================================================
     @Override
-    public List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile archivo) {
+public List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile file) {
 
-        List<String> errores = new ArrayList<>();
+    List<String> errores = new ArrayList<>();
 
-        RolEntity rolEntity = rolRepository.findByNombreIgnoreCase(rol)
-                .orElseThrow(() -> new RuntimeException("Rol no encontrado en la BD"));
+    try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
 
-        try (XSSFWorkbook workbook = new XSSFWorkbook(archivo.getInputStream())) {
+        XSSFSheet sheet = workbook.getSheetAt(0);
 
-            XSSFSheet sheet = workbook.getSheetAt(0);
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
 
-                Row row = sheet.getRow(i);
-                if (row == null) continue;
+            try {
+                UsuarioEntity usuario = new UsuarioEntity();
 
-                try {
-                    UsuarioEntity usuario = new UsuarioEntity();
+                // CAMPOS BASE
+                usuario.setNombre(getCellValueAsString(row, 0));
+                usuario.setCorreo(getCellValueAsString(row, 1));
+                usuario.setContrasena(getCellValueAsString(row, 2));
+                usuario.setCedula(getCellValueAsString(row, 3));
+                usuario.setTelefono(getCellValueAsString(row, 4));
+                usuario.setDireccion(getCellValueAsString(row, 5));
+                usuario.setLocalidad(getCellValueAsString(row, 6));
 
-                    // Campos base obligatorios
-                    usuario.setNombre(row.getCell(0).getStringCellValue());
-                    usuario.setCorreo(row.getCell(1).getStringCellValue());
-                    usuario.setContrasena(row.getCell(2).getStringCellValue());
-                    usuario.setCedula(row.getCell(3).getStringCellValue());
-                    usuario.setTelefono(row.getCell(4).getStringCellValue());
-                    usuario.setDireccion(row.getCell(5).getStringCellValue());
-                    usuario.setLocalidad(row.getCell(6).getStringCellValue());
+                // CAMPOS SEGÚN ROL
+                switch (rol.toUpperCase()) {
+                    case "RECICLADOR":
+                        usuario.setZona_de_trabajo(getCellValueAsString(row, 7));
+                        break;
 
-                    switch (rol) {
-                        case "Reciclador":
-                            usuario.setZona_de_trabajo(row.getCell(7).getStringCellValue());
-                            break;
+                    case "EMPRESA":
+                        usuario.setNit(getCellValueAsString(row, 7));
+                        usuario.setRepresentanteLegal(getCellValueAsString(row, 8));
+                        break;
 
-                        case "Empresa":
-                            usuario.setNit(row.getCell(7).getStringCellValue());
-                            usuario.setRepresentanteLegal(row.getCell(8).getStringCellValue());
-                            break;
-
-                        case "Ciudadano":
-                        case "Administrador":
-                            // solo campos base
-                            break;
-                    }
-
-                    usuario.setRol(rolEntity);
-                    usuarioRepository.save(usuario);
-
-                } catch (Exception e) {
-                    errores.add("Error en fila " + (i + 1) + ": " + e.getMessage());
+                    // Ciudadano y Administrador solo usan campos base
                 }
-            }
 
-        } catch (Exception e) {
-            throw new RuntimeException("Error procesando archivo Excel: " + e.getMessage());
+                // Buscar rol
+                RolEntity rolEntity = rolRepository.findByNombreIgnoreCase(rol)
+                        .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+                usuario.setRol(rolEntity);
+
+                // Guardar usuario
+                usuarioRepository.save(usuario);
+
+            } catch (Exception e) {
+                errores.add("Fila " + (i + 1) + ": " + e.getMessage());
+            }
         }
 
-        return errores;
+    } catch (IOException e) {
+        throw new RuntimeException("Error procesando archivo Excel", e);
     }
 
+    return errores;
+}
+
+// Método auxiliar para leer celdas como String
+private String getCellValueAsString(Row row, int index) {
+    if (row.getCell(index) == null) return "";
+
+    switch (row.getCell(index).getCellType()) {
+        case STRING:
+            return row.getCell(index).getStringCellValue();
+        case NUMERIC:
+            // Convertimos a long si no hay decimales
+            double val = row.getCell(index).getNumericCellValue();
+            if (val == Math.floor(val)) {
+                return String.valueOf((long) val);
+            } else {
+                return String.valueOf(val);
+            }
+        case BOOLEAN:
+            return String.valueOf(row.getCell(index).getBooleanCellValue());
+        case FORMULA:
+            return row.getCell(index).getCellFormula();
+        case BLANK:
+            return "";
+        default:
+            return "";
+    }
+}
 
     @Override
     public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {
