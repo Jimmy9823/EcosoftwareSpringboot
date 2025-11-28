@@ -5,6 +5,8 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.itextpdf.text.DocumentException;
@@ -24,22 +26,32 @@ public interface UsuarioService {
     void eliminacionPorEstado(Long idUsuario);
 
     List<UsuarioDTO> encontrarPorDocumento(String documento);
+
     List<UsuarioDTO> encontrarPorNombre(String nombre);
+
     List<UsuarioDTO> encontrarPorCorreo(String correo);
 
+    // ===========================
+    // CARGA MASIVA DE USUARIOS
+    // ===========================
+
+    byte[] generarPlantillaExcelPorRol(String rol);
+
+    List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile archivo);
+
     // ================================
-    //  MÉTODOS EXPORTACIÓN
+    // MÉTODOS EXPORTACIÓN
     // ================================
 
     // Graficas de usuarios por localidad y rol
     Map<String, Map<String, Long>> obtenerUsuariosPorLocalidadYRol();
-    List<Object[]> obtenerUsuariosPorBarrioYLocalidad();
 
+    List<Object[]> obtenerUsuariosPorBarrioYLocalidad();
 
     // Exportar usuarios a Excel y PDF con filtros opcionales
     void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os) throws IOException;
 
-    void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os) throws IOException, DocumentException;
+    void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os)
+            throws IOException, DocumentException;
 
 }
-

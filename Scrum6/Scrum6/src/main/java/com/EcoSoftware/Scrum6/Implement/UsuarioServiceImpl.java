@@ -1,21 +1,26 @@
 package com.EcoSoftware.Scrum6.Implement;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -128,6 +133,124 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
     result.setContrasena(null); //  Importante: no devolver contraseñas
     return result;
 }
+
+// ========================================================
+    //         GENERAR PLANTILLA POR ROL
+    // ========================================================
+    @Override
+    public byte[] generarPlantillaExcelPorRol(String rol) {
+
+        XSSFWorkbook workbook = new XSSFWorkbook();
+        XSSFSheet sheet = workbook.createSheet("Plantilla");
+
+        // Campos base obligatorios
+        List<String> columnas = new ArrayList<>(List.of(
+                "Nombre",
+                "Correo",
+                "Contrasena",
+                "Cedula",
+                "Telefono",
+                "Direccion",
+                "Localidad"
+        ));
+
+        switch (rol) {
+            case "Reciclador":
+                columnas.add("ZonaTrabajo");
+                break;
+
+            case "Empresa":
+                columnas.add("Nit");
+                columnas.add("RepresentanteLegal");
+                break;
+
+            case "Ciudadano":
+            case "Administrador":
+                // Solo campos base
+                break;
+
+            default:
+                throw new RuntimeException("Rol no valido para plantilla");
+        }
+
+        Row headerRow = sheet.createRow(0);
+        for (int i = 0; i < columnas.size(); i++) {
+            headerRow.createCell(i).setCellValue(columnas.get(i));
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        try {
+            workbook.write(out);
+            workbook.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error generando plantilla", e);
+        }
+
+        return out.toByteArray();
+    }
+
+    // ========================================================
+    //         CARGAR ARCHIVO EXCEL POR ROL
+    // ========================================================
+    @Override
+    public List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile archivo) {
+
+        List<String> errores = new ArrayList<>();
+
+        RolEntity rolEntity = rolRepository.findByNombreIgnoreCase(rol)
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado en la BD"));
+
+        try (XSSFWorkbook workbook = new XSSFWorkbook(archivo.getInputStream())) {
+
+            XSSFSheet sheet = workbook.getSheetAt(0);
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+
+                Row row = sheet.getRow(i);
+                if (row == null) continue;
+
+                try {
+                    UsuarioEntity usuario = new UsuarioEntity();
+
+                    // Campos base obligatorios
+                    usuario.setNombre(row.getCell(0).getStringCellValue());
+                    usuario.setCorreo(row.getCell(1).getStringCellValue());
+                    usuario.setContrasena(row.getCell(2).getStringCellValue());
+                    usuario.setCedula(row.getCell(3).getStringCellValue());
+                    usuario.setTelefono(row.getCell(4).getStringCellValue());
+                    usuario.setDireccion(row.getCell(5).getStringCellValue());
+                    usuario.setLocalidad(row.getCell(6).getStringCellValue());
+
+                    switch (rol) {
+                        case "Reciclador":
+                            usuario.setZona_de_trabajo(row.getCell(7).getStringCellValue());
+                            break;
+
+                        case "Empresa":
+                            usuario.setNit(row.getCell(7).getStringCellValue());
+                            usuario.setRepresentanteLegal(row.getCell(8).getStringCellValue());
+                            break;
+
+                        case "Ciudadano":
+                        case "Administrador":
+                            // solo campos base
+                            break;
+                    }
+
+                    usuario.setRol(rolEntity);
+                    usuarioRepository.save(usuario);
+
+                } catch (Exception e) {
+                    errores.add("Error en fila " + (i + 1) + ": " + e.getMessage());
+                }
+            }
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error procesando archivo Excel: " + e.getMessage());
+        }
+
+        return errores;
+    }
 
 
     @Override

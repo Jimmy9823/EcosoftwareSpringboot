@@ -5,9 +5,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Service.UsuarioService;
@@ -22,6 +26,46 @@ public class UsuarioController {
     @Autowired
     private UsuarioService usuarioService;
 
+// ============================================
+    //  DESCARGAR PLANTILLA POR ROL
+    // ============================================
+    @GetMapping("/plantilla/{rol}")
+    public ResponseEntity<byte[]> descargarPlantilla(@PathVariable String rol) {
+
+        byte[] plantilla = usuarioService.generarPlantillaExcelPorRol(rol);
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=plantilla_" + rol + ".xlsx")
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(plantilla);
+    }
+
+    // ============================================
+    //  CARGAR EXCEL POR ROL
+    // ============================================
+    @PostMapping("/cargar/{rol}")
+    public ResponseEntity<?> cargarExcelPorRol(
+            @PathVariable String rol,
+            @RequestParam("archivo") MultipartFile archivo) {
+
+        try {
+            List<String> errores = usuarioService.cargarUsuariosDesdeExcel(rol, archivo);
+
+            if (errores.isEmpty()) {
+                return ResponseEntity.ok("Usuarios cargados correctamente");
+            }
+
+            return ResponseEntity.badRequest().body(errores);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError()
+                    .body("Error cargando archivo: " + e.getMessage());
+        }
+    }
+
+
+
     // ENDPOINT DE PRUEBA - ELIMINAR LUEGO
     @PostMapping("/test-registro")
     public ResponseEntity<String> testRegistro(@RequestBody String testData) {
@@ -29,6 +73,7 @@ public class UsuarioController {
         System.out.println("Datos: " + testData);
         return ResponseEntity.ok("Test registro exitoso: " + testData);
     }
+
 
     // ENDPOINT DE PRUEBA 2
     @GetMapping("/test-public")

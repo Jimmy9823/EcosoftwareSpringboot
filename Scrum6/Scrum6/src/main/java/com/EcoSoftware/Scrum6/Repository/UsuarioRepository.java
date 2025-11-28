@@ -15,6 +15,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
 
 
     void findByRol(RolEntity rol);
+    
     Optional<UsuarioEntity> findByNitAndEstadoTrue(String nit);
     Optional<UsuarioEntity> findByCedulaAndEstadoTrue(String cedula);
     List<UsuarioEntity> findByNitContainingIgnoreCaseAndEstadoTrue(String nit);
