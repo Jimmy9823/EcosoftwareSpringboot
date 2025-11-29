@@ -54,8 +54,6 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return solicitudRepository.obtenerRechazadasAgrupadasPorMotivo();
     }
 
-
-
     @Override
     public Long contarAceptadas() {
         return solicitudRepository.countAceptadas();
@@ -74,10 +72,10 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
+    
 
     @Autowired
     private TemplateEngine templateEngine;
-    
 
     public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository,
             UsuarioRepository usuarioRepository, EmailService emailService) {
@@ -111,70 +109,8 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return dto;
     }
 
-    // ==========================================================
-    // Lógica para Correo Masivo (Método auxiliar)
-    // ==========================================================
-
-    /**
-     * Notifica a todos los usuarios con rol 'RECICLADOR' sobre una nueva solicitud
-     * pendiente.
-     * Se ajusta para usar findAll() y filtrar en memoria, sin modificar
-     * UsuarioRepository.
-     */
-    private void notificarRecicladoresNuevaSolicitud(SolicitudRecoleccionEntity nuevaSolicitud) {
-        List<String> correosRecicladores;
-
-        try {
-            correosRecicladores = usuarioRepository.findAll().stream()
-                    // Solo usuarios activos
-                    .filter(u -> Boolean.TRUE.equals(u.getEstado()))
-                    // Filtrar roles Reciclador o Empresa
-                    .filter(u -> {
-                        if (u.getRol() == null) return false;
-                        String rol = u.getRol().getNombre();
-                        return "Reciclador".equals(rol) || "Empresa".equals(rol);
-                    })
-                    .map(UsuarioEntity::getCorreo)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            System.err.println("ERROR al obtener lista de usuarios para notificación. Mensaje: " + e.getMessage());
-            return;
-        }
-
-        if (correosRecicladores.isEmpty()) {
-            System.out.println("No hay recicladores o empresas activas para notificar.");
-            return;
-        }
-
-        
-
-       // ------------------------------
-    // 1. Crear contexto Thymeleaf
-    // ------------------------------
-    Context context = new Context();
-    context.setVariable("nombre", nuevaSolicitud.getUsuario().getNombre());
-    context.setVariable("idSolicitud", nuevaSolicitud.getIdSolicitud());
-    context.setVariable("nombreSolicitante", nuevaSolicitud.getUsuario().getNombre());
-    context.setVariable("tipoResiduo", nuevaSolicitud.getTipoResiduo());
-    context.setVariable("localidad", nuevaSolicitud.getLocalidad());
-    context.setVariable("fechaProgramada",
-            nuevaSolicitud.getFechaProgramada() != null ? nuevaSolicitud.getFechaProgramada().toString() : "N/A"
-    );
-
-    // ------------------------------
-    // 2. Procesar plantilla
-    // ------------------------------
-    String contenidoHtml = templateEngine.process("email-notificacionSolicitud", context);
-
-    // ------------------------------
-    // 3. Enviar correo masivo HTML
-    // ------------------------------
-    String asunto = "¡Nueva Solicitud Pendiente! ID: " + nuevaSolicitud.getIdSolicitud();
-    emailService.enviarCorreosMasivos(correosRecicladores, asunto, contenidoHtml);
-    }
-
-
-
+    
+    
     // ==========================================================
     // Métodos CRUD
     // ==========================================================
@@ -198,36 +134,31 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
         SolicitudRecoleccionEntity saved = solicitudRepository.save(entity);
 
-      
-
         // 3. Preparar plantilla Thymeleaf
-    Context context = new Context();
-    context.setVariable("nombre", usuario.getNombre());
-    context.setVariable("idSolicitud", saved.getIdSolicitud());
-    context.setVariable("estado", saved.getEstadoPeticion().name());
-    context.setVariable("tipoResiduo", entity.getTipoResiduo());
-    context.setVariable("cantidad", entity.getCantidad());
-    context.setVariable("descripcion", entity.getDescripcion());
-    context.setVariable("localidad", entity.getLocalidad());
-    context.setVariable("ubicacion", entity.getUbicacion());
-    context.setVariable("fechaProgramada", 
-        entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A"
-    );
-    context.setVariable("fechaCreacion", 
-        saved.getFechaCreacionSolicitud() != null ? saved.getFechaCreacionSolicitud().toString() : "N/A"
-    );
+        Context context = new Context();
+        context.setVariable("nombre", usuario.getNombre());
+        context.setVariable("idSolicitud", saved.getIdSolicitud());
+        context.setVariable("estado", saved.getEstadoPeticion().name());
+        context.setVariable("tipoResiduo", entity.getTipoResiduo());
+        context.setVariable("cantidad", entity.getCantidad());
+        context.setVariable("descripcion", entity.getDescripcion());
+        context.setVariable("localidad", entity.getLocalidad());
+        context.setVariable("ubicacion", entity.getUbicacion());
+        context.setVariable("fechaProgramada",
+                entity.getFechaProgramada() != null ? entity.getFechaProgramada().toString() : "N/A");
+        context.setVariable("fechaCreacion",
+                saved.getFechaCreacionSolicitud() != null ? saved.getFechaCreacionSolicitud().toString() : "N/A");
 
-    String contenidoHtml = templateEngine.process("email-registroSolicitud", context);
+        String contenidoHtml = templateEngine.process("email-registroSolicitud", context);
 
-    // 4. Enviar correo HTML
-    String asunto = "Solicitud registrada correctamente";
-    emailService.enviarCorreo(usuario.getCorreo(), asunto, contenidoHtml);
+        // 4. Enviar correo HTML
+        String asunto = "Solicitud registrada correctamente";
+        emailService.enviarCorreo(usuario.getCorreo(), asunto, contenidoHtml);
 
-    // 5. Notificar a los recicladores
-    notificarRecicladoresNuevaSolicitud(saved);
+        
 
-    // 6. Devolver DTO
-    return entityToDTO(saved);
+        // 5. Devolver DTO
+        return entityToDTO(saved);
     }
 
     @Override
@@ -283,24 +214,22 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         // Guardar la solicitud (asumiendo CascadeType.ALL para RecoleccionEntity)
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
 
-      
-    UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
+        UsuarioEntity usuarioSolicitante = solicitud.getUsuario();
 
-    // Preparamos plantilla HTML
-    Context context = new Context();
-    context.setVariable("nombre", usuarioSolicitante.getNombre());
-    context.setVariable("idSolicitud", solicitud.getIdSolicitud());
-    context.setVariable("nombreRecolector", recolector.getNombre());
-    context.setVariable("estadoPeticion", solicitud.getEstadoPeticion().name());
-    context.setVariable("fechaProgramada",
-            solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A"
-    );
+        // Preparamos plantilla HTML
+        Context context = new Context();
+        context.setVariable("nombre", usuarioSolicitante.getNombre());
+        context.setVariable("idSolicitud", solicitud.getIdSolicitud());
+        context.setVariable("nombreRecolector", recolector.getNombre());
+        context.setVariable("estadoPeticion", solicitud.getEstadoPeticion().name());
+        context.setVariable("fechaProgramada",
+                solicitud.getFechaProgramada() != null ? solicitud.getFechaProgramada().toString() : "N/A");
 
-    String contenidoHtml = templateEngine.process("email-aceptaSolicitud", context);
+        String contenidoHtml = templateEngine.process("email-aceptaSolicitud", context);
 
-    // Enviamos correo HTML
-    String asunto = "Tu solicitud de recolección ha sido aceptada";
-    emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenidoHtml);
+        // Enviamos correo HTML
+        String asunto = "Tu solicitud de recolección ha sido aceptada";
+        emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenidoHtml);
 
         return entityToDTO(saved);
     }
@@ -417,6 +346,31 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
             return inRange;
         }).collect(Collectors.toList());
+    }
+
+    // ==========================================================
+    // Listar por Usuario y Estado
+    // ==========================================================
+    @Override
+    public List<SolicitudRecoleccionDTO> listarPorUsuario(Long usuarioId) {
+        List<SolicitudRecoleccionEntity> solicitudes = solicitudRepository.findByUsuario_IdUsuario(usuarioId);
+
+        return solicitudes.stream()
+                .map(this::entityToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // ==========================================================
+    // Listar por Usuario y Estado
+    // ==========================================================
+    @Override
+    public List<SolicitudRecoleccionDTO> listarPorUsuarioYEstado(Long usuarioId, EstadoPeticion estado) {
+        List<SolicitudRecoleccionEntity> solicitudes = solicitudRepository
+                .findByUsuario_IdUsuarioAndEstadoPeticion(usuarioId, estado);
+
+        return solicitudes.stream()
+                .map(this::entityToDTO)
+                .collect(Collectors.toList());
     }
 
     // ==========================================================

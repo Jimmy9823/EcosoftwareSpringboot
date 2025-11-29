@@ -6,6 +6,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
+import org.thymeleaf.spring6.SpringTemplateEngine;
+import java.util.Map;
+
+import org.thymeleaf.context.Context;
+
 import java.util.List;
 import jakarta.mail.internet.MimeMessage;
 
@@ -57,4 +62,62 @@ public class EmailServiceImpl implements EmailService {
             System.err.println("Error al enviar correo masivo HTML: " + e.getMessage());
         }
     }
+
+    @Autowired
+private SpringTemplateEngine templateEngine;
+
+@Override
+public void enviarCorreoConTemplate(String para, String asunto, String templateNombre, Map<String, Object> variables) {
+
+    try {
+        Context context = new Context();
+        context.setVariables(variables);
+
+        // Carga el archivo de la carpeta templates/
+        String htmlContent = templateEngine.process(templateNombre, context);
+
+        MimeMessage mensaje = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+        helper.setFrom(from);
+        helper.setTo(para);
+        helper.setSubject(asunto);
+        helper.setText(htmlContent, true);
+
+        mailSender.send(mensaje);
+
+    } catch (Exception e) {
+        System.err.println("Error al enviar correo con template: " + e.getMessage());
+    }
+}
+@Override
+public void enviarCorreoConTemplateBCC(List<String> bccRecipients, String subject, String templateNombre, Map<String, Object> variables) {
+    if (bccRecipients == null || bccRecipients.isEmpty()) return;
+
+    try {
+        // Crear contenido HTML con Thymeleaf
+        Context context = new Context();
+        context.setVariables(variables);
+        String htmlContent = templateEngine.process(templateNombre, context);
+
+        // Crear mensaje
+        MimeMessage mensaje = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+        helper.setFrom(from);
+        helper.setTo(from); // tu propio correo como visible
+        helper.setBcc(bccRecipients.toArray(new String[0])); // todos los destinatarios ocultos
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true); // HTML
+
+        // Enviar correo
+        mailSender.send(mensaje);
+
+    } catch (Exception e) {
+        System.err.println("Error al enviar correo masivo con template: " + e.getMessage());
+    }
+}
+
+
+
 }
