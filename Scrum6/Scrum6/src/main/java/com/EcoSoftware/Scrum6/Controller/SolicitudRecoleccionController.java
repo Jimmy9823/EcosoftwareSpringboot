@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+import com.EcoSoftware.Scrum6.Implement.Factory.GraficasFactory;
+import com.EcoSoftware.Scrum6.Service.graficasDatos;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,7 +36,10 @@ import jakarta.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping("/api/solicitudes")
 public class SolicitudRecoleccionController {
-        // Cantidad de pendientes y aceptadas 
+    @Autowired
+    private GraficasFactory factory;
+
+        // Cantidad de pendientes y aceptadas
         @GetMapping("/graficos/pendientes-aceptadas")
         public ResponseEntity<java.util.Map<String, Long>> getPendientesYAceptadas() {
             java.util.Map<String, Long> result = new java.util.HashMap<>();
@@ -253,5 +259,13 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
         if (fechaHasta == null || fechaHasta.isBlank()) return null;
         LocalDate d = LocalDate.parse(fechaHasta);
         return LocalDateTime.of(d, LocalTime.MAX);
+    }
+
+    @GetMapping("/graficas/{tipo}")
+    public ResponseEntity<?> obtenerGrafica(@PathVariable String tipo) {
+
+        graficasDatos grafica = factory.obtenerGrafica(tipo);
+
+        return ResponseEntity.ok(grafica.traerDatos());
     }
 }
