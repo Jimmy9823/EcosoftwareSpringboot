@@ -106,6 +106,29 @@ public class SolicitudRecoleccionController {
     }
 
     // ========================================================
+    // LISTAR SOLICITUDES POR USUARIO
+    // ========================================================
+
+    @GetMapping("/usuario/{id}")
+public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuario(@PathVariable Long id) {
+    return ResponseEntity.ok(solicitudService.listarPorUsuario(id));
+}
+    // ========================================================
+    // LISTAR SOLICITUDES POR USUARIO Y ESTADO
+    // ========================================================
+
+@GetMapping("/usuario/{id}/estado/{estado}")
+public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
+        @PathVariable Long id,
+        @PathVariable EstadoPeticion estado
+) {
+    return ResponseEntity.ok(
+            solicitudService.listarPorUsuarioYEstado(id, estado)
+    );
+}
+
+
+    // ========================================================
     // ACEPTAR SOLICITUD (Recolector)
     // ========================================================
     @PostMapping("/{id}/aceptar")
@@ -143,6 +166,8 @@ public class SolicitudRecoleccionController {
         // Actualiza la solicitud asociada al usuario autenticado
         return ResponseEntity.ok(solicitudService.actualizarSolicitudConUsuario(dto, correoUsuario));
     }
+
+    
 
     // ========================================================
     // EXPORTACIONES (Excel / PDF)

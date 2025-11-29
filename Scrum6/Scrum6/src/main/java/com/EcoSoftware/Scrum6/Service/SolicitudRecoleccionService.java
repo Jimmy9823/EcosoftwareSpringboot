@@ -26,6 +26,13 @@ public interface SolicitudRecoleccionService {
     // Listar todas las solicitudes registradas en el sistema
     List<SolicitudRecoleccionDTO> listarTodas();
 
+    // Listar solicitudes filtradas por usuario y estado
+    List<SolicitudRecoleccionDTO> listarPorUsuarioYEstado(Long usuarioId, EstadoPeticion estado);
+
+    // Listar solicitudes filtradas por usuario
+    List<SolicitudRecoleccionDTO> listarPorUsuario(Long usuarioId);
+
+
     // Listar solicitudes filtradas por estado (Pendiente, Aceptada o Rechazada)
     List<SolicitudRecoleccionDTO> listarPorEstado(EstadoPeticion estado);
 
