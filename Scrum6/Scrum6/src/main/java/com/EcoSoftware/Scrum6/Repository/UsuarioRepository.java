@@ -44,10 +44,11 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
                                       @Param("documento") String documento);
 
     List<UsuarioEntity> findByEstadoTrue();
-    @Query("SELECT u.localidad AS localidad, u.barrio AS barrio, COUNT(u) AS total " +
+    @Query("SELECT u.localidad AS localidad, COUNT(u) AS total " +
             "FROM UsuarioEntity u " +
             "WHERE u.estado = true " +
-            "GROUP BY u.localidad, u.barrio")
-    List<Object[]> contarUsuariosPorBarrioYLocalidad();
+            "GROUP BY u.localidad")
+    List<Object[]> contarUsuariosPorLocalidad();
+    Optional<UsuarioEntity> findByCorreoIgnoreCase(String correo);
 
 }

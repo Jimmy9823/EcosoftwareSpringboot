@@ -16,11 +16,12 @@ public class GraficasFactory {
 
         switch (tipo.toLowerCase()) {
 
-            case "estados":
+            case "solicitudes-estado":
                 return context.getBean("graficaEstados", graficasDatos.class);
-
-            case "localidades":
+            case "solicitudes-localidad":
                 return context.getBean("graficaLocalidades", graficasDatos.class);
+            case "usuarios-localidad":
+                return context.getBean("graficaUsuariosLocalidad", graficasDatos.class);
             default:
                 throw new IllegalArgumentException("Tipo de gráfica no soportado: " + tipo);
         }

@@ -1,14 +1,13 @@
 package com.EcoSoftware.Scrum6.Implement.Graficas;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
+import com.EcoSoftware.Scrum6.Service.graficasDatos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
-import com.EcoSoftware.Scrum6.Service.graficasDatos;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component("graficaLocalidades")
 public class GraficaSolicitudesPorLocalidad implements graficasDatos {

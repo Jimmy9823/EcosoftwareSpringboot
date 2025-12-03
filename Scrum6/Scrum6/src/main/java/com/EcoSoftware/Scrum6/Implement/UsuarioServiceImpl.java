@@ -512,7 +512,7 @@ private String getCellValueAsString(Row row, int index) {
 
     @Override
     public List<Object[]> obtenerUsuariosPorBarrioYLocalidad() {
-        return usuarioRepository.contarUsuariosPorBarrioYLocalidad();
+        return usuarioRepository.contarUsuariosPorLocalidad();
     }
 
 

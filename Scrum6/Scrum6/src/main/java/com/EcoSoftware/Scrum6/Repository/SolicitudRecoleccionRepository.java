@@ -46,8 +46,12 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     Long countAceptadas();
 
     // Contar solicitudes pendientes
+
     @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Pendiente")
     Long countPendientes();
+
+    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada")
+    Long countRechazadas();
 
     // Solicitudes por localidad
     @org.springframework.data.jpa.repository.Query("SELECT s.localidad, COUNT(s) FROM SolicitudRecoleccionEntity s GROUP BY s.localidad")
