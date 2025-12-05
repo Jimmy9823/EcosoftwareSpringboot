@@ -29,7 +29,7 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
     public void run(String... args) {
 
         crearUsuarioBaseSiNoExiste(
-                "jaiandroaber.com",   // correo
+                "jaiandroaber@gmail.com",   // correo
                 "Administrador",            // nombre
                 "123456",                   // contraseña
                 "1000070000",               // cédula
@@ -82,8 +82,10 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
     ) {
 
         // Validar si ya existe por correo
-        if (usuarioRepository.findByCorreoIgnoreCase(correo).isPresent()) {
-            return; // Ya existe, no crearlo
+        if (usuarioRepository.findByCorreoIgnoreCase(correo).isPresent() ||
+                usuarioRepository.findByCedulaAndEstadoTrue(cedula).isPresent()) {
+            System.out.println("Usuario ya registrado en la BD");
+            return;
         }
 
         // Buscar rol

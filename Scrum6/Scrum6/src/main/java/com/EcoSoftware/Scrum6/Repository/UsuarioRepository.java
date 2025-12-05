@@ -22,6 +22,7 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
     List<UsuarioEntity> findByCedulaContainingIgnoreCaseAndEstadoTrue(String cedula);
     Optional<UsuarioEntity> findByNombreAndEstadoTrue(String nombre);
     List<UsuarioEntity> findByNombreContainingIgnoreCaseAndEstadoTrue(String nombre);
+    List<UsuarioEntity> findAllByOrderByIdUsuarioAsc();
     Optional<UsuarioEntity> findByCorreoAndEstadoTrue(String correo);
 
     List<UsuarioEntity> findByCorreoContainingIgnoreCaseAndEstadoTrue(String correo);
@@ -50,5 +51,4 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
             "GROUP BY u.localidad")
     List<Object[]> contarUsuariosPorLocalidad();
     Optional<UsuarioEntity> findByCorreoIgnoreCase(String correo);
-
 }

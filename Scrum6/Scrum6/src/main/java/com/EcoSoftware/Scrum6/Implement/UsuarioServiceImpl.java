@@ -68,7 +68,7 @@ private TemplateEngine templateEngine;
 
     @Override
     public List<UsuarioDTO> listarUsuarios() {
-        return usuarioRepository.findAll()
+        return usuarioRepository.findAllByOrderByIdUsuarioAsc()
                 .stream()
                 .map(this::convertirADTO)
                 .toList();
