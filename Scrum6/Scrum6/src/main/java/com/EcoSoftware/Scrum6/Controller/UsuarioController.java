@@ -163,14 +163,15 @@ public class UsuarioController {
     }
 
     //Metodo de eliminado en base de datos, activar solo si no es suficiente eliminacion logica
-    /*@DeleteMapping("/{id}")
+    @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminarUsuario(@PathVariable Long id) {
         try{usuarioService.eliminarPersona(id);
         return ResponseEntity.ok("Usuario eliminado");
         } catch (Exception e){
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
 
-    }*/
+    }
+}
     // ================================
     // EXPORTACIONES
     // ================================
