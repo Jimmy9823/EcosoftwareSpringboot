@@ -1,9 +1,6 @@
 package com.EcoSoftware.Scrum6.Entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -18,10 +15,12 @@ public class UsuarioEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUsuario;
 
+    // --- RELACIÓN CON ROL ---
     @ManyToOne
     @JoinColumn(name = "rol_id", nullable = false)
     private RolEntity rol;
 
+    // --- DATOS BÁSICOS ---
     @Column(nullable = false)
     private String nombre;
 
@@ -46,33 +45,44 @@ public class UsuarioEntity {
     @Column
     private String localidad;
 
+    // --- EMPRESAS ---
     @Column
-    private String nit;                      // Para empresas
+    private String nit;
 
     @Column
-    private String representanteLegal;       // Para empresas
+    private String representanteLegal;
+
+    @Column(columnDefinition = "TEXT")
+    private String Rut; // Documento RUT de empresa
+
+    // --- RECICLADORES / EMPRESAS ---
+    @Column
+    private String zona_de_trabajo;
 
     @Column
-    private String zona_de_trabajo;          // Para recicladores / empresas
+    private String horario;
 
     @Column
-    private String horario;                  // Horario general
+    private String tipoMaterial;
 
     @Column
-    private String tipoMaterial;             // Para recicladores / empresas
+    private Integer cantidad_minima;
 
+    // --- ARCHIVOS / IMÁGENES ---
     @Column
-    private Integer cantidad_minima;         // Para empresas
+    private String imagen_perfil; // URL imagen
 
-    @Column
-    private String imagen_perfil;
+    @Column(columnDefinition = "TEXT")
+    private String certificaciones; // Certificados reciclador
 
-    @Column
-    private String certificaciones;
+    @Column(columnDefinition = "TEXT")
+    private String Documento; // Documento reciclador o representante legal
 
+    // --- ESTADO ---
     @Column(nullable = false)
-    private Boolean estado = true;
+    private Boolean estado = true; // Admin y ciudadano activos por defecto
 
+    // --- FECHAS ---
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
@@ -80,6 +90,7 @@ public class UsuarioEntity {
     @Column(nullable = false)
     private LocalDateTime fechaActualizacion;
 
+    // --- EVENTOS AUTOMÁTICOS ---
     @PrePersist
     private void prePersist() {
         this.fechaCreacion = LocalDateTime.now();
@@ -91,4 +102,3 @@ public class UsuarioEntity {
         this.fechaActualizacion = LocalDateTime.now();
     }
 }
-

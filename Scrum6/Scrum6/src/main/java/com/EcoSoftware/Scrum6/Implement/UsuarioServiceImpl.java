@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -24,13 +23,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
-
 import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
+import com.EcoSoftware.Scrum6.Service.CloudinaryService;
 import com.EcoSoftware.Scrum6.Service.UsuarioService;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
@@ -61,10 +60,10 @@ public class UsuarioServiceImpl implements UsuarioService {
     private com.EcoSoftware.Scrum6.Service.EmailService emailService;
 
     @Autowired
-private TemplateEngine templateEngine;
+    private TemplateEngine templateEngine;
 
-
-
+    @Autowired
+private CloudinaryService cloudinaryService;
 
     @Override
     public List<UsuarioDTO> listarUsuarios() {
@@ -82,60 +81,148 @@ private TemplateEngine templateEngine;
     }
 
     @Override
-public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
-    if (usuarioDTO.getRolId() == null) {
-        throw new RuntimeException("El rol es obligatorio");
-    }
+    public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
+        if (usuarioDTO.getRolId() == null) {
+            throw new RuntimeException("El rol es obligatorio");
+        }
 
-    // Mapear el DTO a la entidad
-    UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
+        UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
 
-    // Buscar el rol
-    RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
-            .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
-    entity.setRol(rol);
+        // Buscar el rol
+        RolEntity rol = rolRepository.findById(usuarioDTO.getRolId())
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado con id " + usuarioDTO.getRolId()));
+        entity.setRol(rol);
 
-    // Cifrar la contraseña antes de guardar
-    entity.setContrasena(passwordEncoder.encode(usuarioDTO.getContrasena()));
+        // Cifrar contraseña
+        entity.setContrasena(passwordEncoder.encode(usuarioDTO.getContrasena()));
 
-    // Asignar valores por defecto
-    if (entity.getEstado() == null) {
-        entity.setEstado(true);
-    }
-    if (entity.getFechaCreacion() == null) {
+        // DEFINIR ESTADO SEGÚN ROL
+        Long rolId = usuarioDTO.getRolId();
+        if (rolId == 1 || rolId == 2) {
+            entity.setEstado(true); // Admin y Ciudadano
+        } else {
+            entity.setEstado(false); // Empresa y Reciclador
+        }
+
+        // Fechas
         entity.setFechaCreacion(LocalDateTime.now());
+        entity.setFechaActualizacion(LocalDateTime.now());
+
+        // Guardar usuario
+        UsuarioEntity saved = usuarioRepository.save(entity);
+
+        // Enviar correo
+        Context context = new Context();
+        context.setVariable("nombre", saved.getNombre());
+        String html = templateEngine.process("email-bienvenida", context);
+
+        emailService.enviarCorreo(saved.getCorreo(),
+                "¡Bienvenido a EcoSoftware!", html);
+
+        // Convertir a DTO (sin contraseña)
+        UsuarioDTO result = modelMapper.map(saved, UsuarioDTO.class);
+        result.setContrasena(null);
+
+        return result;
     }
-    entity.setFechaActualizacion(LocalDateTime.now());
 
-    // Guardar el usuario
-    UsuarioEntity saved = usuarioRepository.save(entity);
+    // aprobación de regsitro
+    @Override
+    public void aprobarUsuario(Long idUsuario) {
+        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    /** -----------------------------
-     *  ENVIAR CORREO CON PLANTILLA
-     * ------------------------------ */
+        // Si ya está activo, no hay que aprobar
+        if (usuario.getEstado() != null && usuario.getEstado()) {
+            throw new RuntimeException("El usuario ya está activo");
+        }
 
-    // Crear contexto de Thymeleaf
-    Context context = new Context();
-    context.setVariable("nombre", saved.getNombre());
+        usuario.setEstado(true);
+        usuario.setFechaActualizacion(LocalDateTime.now());
 
-    // Procesar plantilla
-    String html = templateEngine.process("email-bienvenida", context);
+        usuarioRepository.save(usuario);
 
-    // Enviar correo HTML
-    emailService.enviarCorreo(
-            saved.getCorreo(),
-            "¡Bienvenido a EcoSoftware!",
-            html
-    );
+        //Enviar correo de aprobación
+        
+    }
 
-    // Devolver el DTO sin exponer la contraseña
-    UsuarioDTO result = modelMapper.map(saved, UsuarioDTO.class);
-    result.setContrasena(null); //  Importante: no devolver contraseñas
-    return result;
+    //elimición de registro
+    @Override
+public void rechazarUsuario(Long idUsuario) {
+    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    // Solo se deberían rechazar usuarios pendientes
+    if (usuario.getEstado() != null && usuario.getEstado()) {
+        throw new RuntimeException("No se puede rechazar un usuario ya activo");
+    }
+
+    usuarioRepository.delete(usuario);
+
+    //enviar correo de rechazo
+    
 }
 
-// ========================================================
-    //         GENERAR PLANTILLA POR ROL
+
+
+
+@Override
+public List<UsuarioDTO> listarUsuariosPendientes() {
+    return usuarioRepository.findByEstadoFalse()
+            .stream()
+            .map(this::convertirADTO)
+            .toList();
+}
+
+@Override
+public Long contarUsuariosPendientes() {
+    return usuarioRepository.countByEstadoFalse();
+}
+
+@Override
+public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
+    if (file == null || file.isEmpty()) {
+        throw new RuntimeException("Archivo no enviado");
+    }
+
+    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    // Folder y publicId
+    String folder = "usuarios/" + idUsuario;
+    String publicId = tipo + "_" + System.currentTimeMillis();
+
+    // Subir a Cloudinary
+    String url = cloudinaryService.upload(file, folder, publicId);
+
+    // Guardar según tipo en la entidad (tu diseño: campos simples en UsuarioEntity)
+    switch (tipo.toUpperCase()) {
+        case "CEDULA":
+            usuario.setDocumento(url); // si usas 'Documento' para cédula
+            break;
+        case "CERTIFICADO":
+            usuario.setCertificaciones(url);
+            break;
+        case "RUT":
+            usuario.setRut(url);
+            break;
+        case "FOTO_PERFIL":
+            usuario.setImagen_perfil(url);
+            break;
+        default:
+            // Si quieres soportar otros tipos, agrégalos
+            break;
+    }
+
+    usuario.setFechaActualizacion(LocalDateTime.now());
+    usuarioRepository.save(usuario);
+
+    return url;
+}
+
+
+    // ========================================================
+    // GENERAR PLANTILLA POR ROL
     // ========================================================
     @Override
     public byte[] generarPlantillaExcelPorRol(String rol) {
@@ -151,8 +238,7 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
                 "Cedula",
                 "Telefono",
                 "Direccion",
-                "Localidad"
-        ));
+                "Localidad"));
 
         switch (rol) {
             case "Reciclador":
@@ -190,93 +276,95 @@ public UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO) {
     }
 
     // ========================================================
-    //         CARGAR ARCHIVO EXCEL POR ROL
+    // CARGAR ARCHIVO EXCEL POR ROL
     // ========================================================
     @Override
-public List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile file) {
+    public List<String> cargarUsuariosDesdeExcel(String rol, MultipartFile file) {
 
-    List<String> errores = new ArrayList<>();
+        List<String> errores = new ArrayList<>();
 
-    try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
 
-        XSSFSheet sheet = workbook.getSheetAt(0);
+            XSSFSheet sheet = workbook.getSheetAt(0);
 
-        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
 
-            Row row = sheet.getRow(i);
-            if (row == null) continue;
+                Row row = sheet.getRow(i);
+                if (row == null)
+                    continue;
 
-            try {
-                UsuarioEntity usuario = new UsuarioEntity();
+                try {
+                    UsuarioEntity usuario = new UsuarioEntity();
 
-                // CAMPOS BASE
-                usuario.setNombre(getCellValueAsString(row, 0));
-                usuario.setCorreo(getCellValueAsString(row, 1));
-                usuario.setContrasena(getCellValueAsString(row, 2));
-                usuario.setCedula(getCellValueAsString(row, 3));
-                usuario.setTelefono(getCellValueAsString(row, 4));
-                usuario.setDireccion(getCellValueAsString(row, 5));
-                usuario.setLocalidad(getCellValueAsString(row, 6));
+                    // CAMPOS BASE
+                    usuario.setNombre(getCellValueAsString(row, 0));
+                    usuario.setCorreo(getCellValueAsString(row, 1));
+                    usuario.setContrasena(getCellValueAsString(row, 2));
+                    usuario.setCedula(getCellValueAsString(row, 3));
+                    usuario.setTelefono(getCellValueAsString(row, 4));
+                    usuario.setDireccion(getCellValueAsString(row, 5));
+                    usuario.setLocalidad(getCellValueAsString(row, 6));
 
-                // CAMPOS SEGÚN ROL
-                switch (rol.toUpperCase()) {
-                    case "RECICLADOR":
-                        usuario.setZona_de_trabajo(getCellValueAsString(row, 7));
-                        break;
+                    // CAMPOS SEGÚN ROL
+                    switch (rol.toUpperCase()) {
+                        case "RECICLADOR":
+                            usuario.setZona_de_trabajo(getCellValueAsString(row, 7));
+                            break;
 
-                    case "EMPRESA":
-                        usuario.setNit(getCellValueAsString(row, 7));
-                        usuario.setRepresentanteLegal(getCellValueAsString(row, 8));
-                        break;
+                        case "EMPRESA":
+                            usuario.setNit(getCellValueAsString(row, 7));
+                            usuario.setRepresentanteLegal(getCellValueAsString(row, 8));
+                            break;
 
-                    // Ciudadano y Administrador solo usan campos base
+                        // Ciudadano y Administrador solo usan campos base
+                    }
+
+                    // Buscar rol
+                    RolEntity rolEntity = rolRepository.findByNombreIgnoreCase(rol)
+                            .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+                    usuario.setRol(rolEntity);
+
+                    // Guardar usuario
+                    usuarioRepository.save(usuario);
+
+                } catch (Exception e) {
+                    errores.add("Fila " + (i + 1) + ": " + e.getMessage());
                 }
-
-                // Buscar rol
-                RolEntity rolEntity = rolRepository.findByNombreIgnoreCase(rol)
-                        .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
-                usuario.setRol(rolEntity);
-
-                // Guardar usuario
-                usuarioRepository.save(usuario);
-
-            } catch (Exception e) {
-                errores.add("Fila " + (i + 1) + ": " + e.getMessage());
             }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Error procesando archivo Excel", e);
         }
 
-    } catch (IOException e) {
-        throw new RuntimeException("Error procesando archivo Excel", e);
+        return errores;
     }
 
-    return errores;
-}
-
-// Método auxiliar para leer celdas como String
-private String getCellValueAsString(Row row, int index) {
-    if (row.getCell(index) == null) return "";
-
-    switch (row.getCell(index).getCellType()) {
-        case STRING:
-            return row.getCell(index).getStringCellValue();
-        case NUMERIC:
-            // Convertimos a long si no hay decimales
-            double val = row.getCell(index).getNumericCellValue();
-            if (val == Math.floor(val)) {
-                return String.valueOf((long) val);
-            } else {
-                return String.valueOf(val);
-            }
-        case BOOLEAN:
-            return String.valueOf(row.getCell(index).getBooleanCellValue());
-        case FORMULA:
-            return row.getCell(index).getCellFormula();
-        case BLANK:
+    // Método auxiliar para leer celdas como String
+    private String getCellValueAsString(Row row, int index) {
+        if (row.getCell(index) == null)
             return "";
-        default:
-            return "";
+
+        switch (row.getCell(index).getCellType()) {
+            case STRING:
+                return row.getCell(index).getStringCellValue();
+            case NUMERIC:
+                // Convertimos a long si no hay decimales
+                double val = row.getCell(index).getNumericCellValue();
+                if (val == Math.floor(val)) {
+                    return String.valueOf((long) val);
+                } else {
+                    return String.valueOf(val);
+                }
+            case BOOLEAN:
+                return String.valueOf(row.getCell(index).getBooleanCellValue());
+            case FORMULA:
+                return row.getCell(index).getCellFormula();
+            case BLANK:
+                return "";
+            default:
+                return "";
+        }
     }
-}
 
     @Override
     public UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuarioDTO) {
@@ -342,7 +430,7 @@ private String getCellValueAsString(Row row, int index) {
     }
 
     @Override
-    public List<UsuarioDTO> encontrarPorCorreo(String correo){
+    public List<UsuarioDTO> encontrarPorCorreo(String correo) {
         List<UsuarioEntity> buscarCorreo = usuarioRepository.findByCorreoAndEstadoTrue(correo).stream().toList();
         if (buscarCorreo.isEmpty()) {
             buscarCorreo = usuarioRepository.findByCorreoContainingIgnoreCaseAndEstadoTrue(correo);
@@ -363,7 +451,7 @@ private String getCellValueAsString(Row row, int index) {
     }
 
     // =====================================================
-    //  MÉTODO AUXILIAR para filtrar usuarios reutilizable
+    // MÉTODO AUXILIAR para filtrar usuarios reutilizable
     // =====================================================
     private List<UsuarioDTO> obtenerUsuariosFiltrados(String nombre, String correo, String documento) {
         if ((nombre == null || nombre.isEmpty()) &&
@@ -381,18 +469,18 @@ private String getCellValueAsString(Row row, int index) {
     // Exportar usuarios a CSV
     // ==============================
 
-
     // ==============================
     // Exportar usuarios a Excel
     // ==============================
     @Override
-    public void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os) throws IOException {
+    public void exportUsuariosToExcel(String nombre, String correo, String documento, OutputStream os)
+            throws IOException {
         Workbook workbook = new XSSFWorkbook();
         Sheet sheet = workbook.createSheet("Usuarios");
 
-        String[] headers = {"ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
+        String[] headers = { "ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
                 "Barrio", "Localidad", "Zona de Trabajo", "Horario", "Certificaciones",
-                "Cantidad Mínima", "Estado", "Fecha Creación"};
+                "Cantidad Mínima", "Estado", "Fecha Creación" };
 
         Row headerRow = sheet.createRow(0);
         for (int i = 0; i < headers.length; i++) {
@@ -419,7 +507,8 @@ private String getCellValueAsString(Row row, int index) {
             row.createCell(12).setCellValue(usuario.getCertificaciones() != null ? usuario.getCertificaciones() : "");
             row.createCell(13).setCellValue(usuario.getCantidad_minima() != null ? usuario.getCantidad_minima() : 0);
             row.createCell(14).setCellValue(usuario.getEstado() != null && usuario.getEstado() ? "Activo" : "Inactivo");
-            row.createCell(15).setCellValue(usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : "");
+            row.createCell(15)
+                    .setCellValue(usuario.getFechaCreacion() != null ? usuario.getFechaCreacion().toString() : "");
         }
 
         for (int i = 0; i < headers.length; i++) {
@@ -434,7 +523,8 @@ private String getCellValueAsString(Row row, int index) {
     // Exportar usuarios a PDF
     // ==============================
     @Override
-    public void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os) throws IOException, DocumentException {
+    public void exportUsuariosToPDF(String nombre, String correo, String documento, OutputStream os)
+            throws IOException, DocumentException {
         Document document = new Document(PageSize.A4.rotate());
         PdfWriter.getInstance(document, os);
         document.open();
@@ -442,9 +532,9 @@ private String getCellValueAsString(Row row, int index) {
         document.add(new Paragraph("Reporte de Usuarios"));
         document.add(new Paragraph(" "));
 
-        String[] headers = {"ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
+        String[] headers = { "ID", "Rol ID", "Nombre", "Correo", "Cédula", "Teléfono", "NIT", "Dirección",
                 "Barrio", "Localidad", "Zona de Trabajo", "Horario", "Certificaciones",
-                "Cantidad Mínima", "Estado", "Fecha Creación"};
+                "Cantidad Mínima", "Estado", "Fecha Creación" };
 
         PdfPTable table = new PdfPTable(headers.length);
         table.setWidthPercentage(100);
@@ -480,7 +570,6 @@ private String getCellValueAsString(Row row, int index) {
         document.close();
     }
 
-
     @Override
     public Map<String, Map<String, Long>> obtenerUsuariosPorLocalidadYRol() {
 
@@ -499,7 +588,8 @@ private String getCellValueAsString(Row row, int index) {
             }
 
             String localidad = u.getLocalidad();
-            if (localidad == null) continue;
+            if (localidad == null)
+                continue;
 
             resultado.putIfAbsent(localidad, new HashMap<>());
             Map<String, Long> conteos = resultado.get(localidad);
@@ -514,6 +604,5 @@ private String getCellValueAsString(Row row, int index) {
     public List<Object[]> obtenerUsuariosPorBarrioYLocalidad() {
         return usuarioRepository.contarUsuariosPorLocalidad();
     }
-
 
 }

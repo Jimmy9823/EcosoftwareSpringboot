@@ -19,6 +19,18 @@ public interface UsuarioService {
 
     UsuarioDTO crearUsuario(UsuarioDTO usuarioDTO);
 
+    void aprobarUsuario(Long idUsuario);
+
+    void rechazarUsuario(Long idUsuario);
+
+    // Listados y contador para admin
+    List<UsuarioDTO> listarUsuariosPendientes(); // devuelve usuarios con estado = false
+
+    Long contarUsuariosPendientes();
+
+    // Subida de documentos 
+    String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException;
+
     UsuarioEditarDTO actualizarUsuario(Long idUsuario, UsuarioEditarDTO usuDTO);
 
     void eliminarPersona(Long idUsuario);

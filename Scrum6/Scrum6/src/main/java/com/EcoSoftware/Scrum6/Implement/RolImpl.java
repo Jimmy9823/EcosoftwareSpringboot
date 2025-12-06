@@ -1,9 +1,7 @@
 package com.EcoSoftware.Scrum6.Implement;
 
 import com.EcoSoftware.Scrum6.DTO.RolDTO;
-import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
-import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Service.RolService;
 import org.modelmapper.ModelMapper;

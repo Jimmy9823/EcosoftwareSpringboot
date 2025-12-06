@@ -136,6 +136,56 @@ public class UsuarioController {
         }
     }
 
+// Listar pendientes
+@GetMapping("/pendientes")
+public ResponseEntity<List<UsuarioDTO>> listarPendientes() {
+    return ResponseEntity.ok(usuarioService.listarUsuariosPendientes());
+}
+
+// Contador de pendientes
+@GetMapping("/pendientes/count")
+public ResponseEntity<Long> contarPendientes() {
+    return ResponseEntity.ok(usuarioService.contarUsuariosPendientes());
+}
+
+// Aprobar
+@PatchMapping("/aprobar/{id}")
+public ResponseEntity<String> aprobarUsuario(@PathVariable Long id) {
+    try {
+        usuarioService.aprobarUsuario(id);
+        return ResponseEntity.ok("Usuario aprobado correctamente");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+}
+
+// Rechazar/eliminar
+@DeleteMapping("/rechazar/{id}")
+public ResponseEntity<String> rechazarUsuario(@PathVariable Long id) {
+    try {
+        usuarioService.rechazarUsuario(id);
+        return ResponseEntity.ok("Usuario rechazado y eliminado correctamente");
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+    }
+}
+
+// Subir documento para un usuario
+@PostMapping(value = "/{id}/documento", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> subirDocumento(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("tipo") String tipo) {
+    try {
+        String url = usuarioService.subirDocumento(file, id, tipo);
+        return ResponseEntity.ok(Map.of("url", url));
+    } catch (Exception e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+    }
+}
+
+
+
     //Actualiza un usuario existente
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioEditarDTO> actualizarUsuario(@Valid @RequestBody UsuarioEditarDTO usuarioDTO, @PathVariable Long id) {

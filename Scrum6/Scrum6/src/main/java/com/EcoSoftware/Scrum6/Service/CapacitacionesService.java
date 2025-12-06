@@ -5,7 +5,6 @@ import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.UploadResultDTO;
-import org.springframework.web.multipart.MultipartFile;
 
 
 /**
