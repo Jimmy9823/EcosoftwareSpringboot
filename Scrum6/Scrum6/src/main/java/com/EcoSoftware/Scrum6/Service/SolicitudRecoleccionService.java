@@ -71,4 +71,5 @@ public interface SolicitudRecoleccionService {
     // Obtener solicitudes agrupadas por localidad
     List<Object[]> obtenerSolicitudesPorLocalidad();
 
+
 }

@@ -16,6 +16,8 @@ public interface RecoleccionRepository extends JpaRepository<RecoleccionEntity, 
     // Recolecciones activas de un recolector
     List<RecoleccionEntity> findByRecolector_IdUsuarioAndEstadoNot(Long recolectorId, EstadoRecoleccion estado);
 
+    //
+    List<RecoleccionEntity> findByRecolector_IdUsuario(Long recolectorId);
     // Recolecciones activas de una ruta
     List<RecoleccionEntity> findByRuta_IdRutaAndEstadoNot(Long rutaId, EstadoRecoleccion estado);
 

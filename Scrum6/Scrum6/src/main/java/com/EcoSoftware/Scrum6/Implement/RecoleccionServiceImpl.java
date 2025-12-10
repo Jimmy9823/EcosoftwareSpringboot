@@ -20,6 +20,16 @@ public class RecoleccionServiceImpl implements RecoleccionService {
 
     private final RecoleccionRepository recoleccionRepository;
 
+    @Override
+    public List<RecoleccionEntity> listarTodas() {
+        return recoleccionRepository.findAll();
+    }
+
+    @Override
+    public List<RecoleccionEntity> ListarTodasRecolector(Long recolectorId) {
+        return recoleccionRepository.findByRecolector_IdUsuario(recolectorId);
+    }
+
     // ========================================================
     // OBTENER RECOLECCIÓN POR ID
     // ========================================================

@@ -23,6 +23,14 @@ public class RecoleccionController {
     private final RecoleccionService recoleccionService;
     private final UsuarioRepository usuarioRepository;
 
+    @GetMapping
+    public ResponseEntity<List<RecoleccionDTO>> listarTodas() {
+        return ResponseEntity.ok(
+                recoleccionService.listarTodas().stream()
+                        .map(this::toDto)
+                        .collect(Collectors.toList())
+        );
+    }
     // ========================================================
     // OBTENER RECOLECCIÓN POR ID
     // ========================================================
@@ -32,6 +40,15 @@ public class RecoleccionController {
         return recoleccionService.obtenerPorId(id)
                 .map(r -> ResponseEntity.ok(toDto(r)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/recolector/{id}")
+    public ResponseEntity<List<RecoleccionDTO>> listarPorRecolector(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                recoleccionService.ListarTodasRecolector(id).stream()
+                        .map(this::toDto)
+                        .collect(Collectors.toList())
+        );
     }
 
     // ========================================================

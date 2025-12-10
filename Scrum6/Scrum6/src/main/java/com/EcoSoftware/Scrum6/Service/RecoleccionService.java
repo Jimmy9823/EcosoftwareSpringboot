@@ -27,8 +27,11 @@ public interface RecoleccionService {
     // Actualizar datos de recoleccion
     RecoleccionEntity actualizarRecoleccion(Long id, RecoleccionDTO dto);
 
+    List<RecoleccionEntity> ListarTodasRecolector(Long recolectorId);
     // Eliminar lógicamente una recolección (activo = false)
     void eliminarLogicamente(Long recoleccionId);
+
+    List<RecoleccionEntity> listarTodas();
 }
 
 

@@ -84,6 +84,7 @@ public class SolicitudRecoleccionController {
         return ResponseEntity.ok(solicitudService.crearSolicitudConUsuario(dto, correoUsuario));
     }
 
+
     // ========================================================
     // OBTENER SOLICITUD POR ID
     // ========================================================
@@ -101,7 +102,11 @@ public class SolicitudRecoleccionController {
         // Retorna la lista completa de solicitudes
         return ResponseEntity.ok(solicitudService.listarTodas());
     }
-
+    @GetMapping("/idUsuario/{id}")
+    public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorIdUsuario(@PathVariable Long id) {
+        // Retorna las solicitudes filtradas por su estado
+        return ResponseEntity.ok(solicitudService.listarPorUsuario(id));
+    }
     // ========================================================
     // LISTAR SOLICITUDES POR ESTADO
     // ========================================================

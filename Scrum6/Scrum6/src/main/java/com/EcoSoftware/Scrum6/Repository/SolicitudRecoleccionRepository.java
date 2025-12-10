@@ -1,8 +1,11 @@
 package com.EcoSoftware.Scrum6.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.EcoSoftware.Scrum6.Entity.SolicitudRecoleccionEntity;
@@ -12,6 +15,7 @@ import com.EcoSoftware.Scrum6.Enums.TipoResiduo;
 
 @Repository
 public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudRecoleccionEntity, Long> {
+
 
     // Buscar solicitudes por estado
     List<SolicitudRecoleccionEntity> findByEstadoPeticion(EstadoPeticion estadoPeticion);
@@ -56,5 +60,8 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     // Solicitudes por localidad
     @org.springframework.data.jpa.repository.Query("SELECT s.localidad, COUNT(s) FROM SolicitudRecoleccionEntity s GROUP BY s.localidad")
     List<Object[]> obtenerSolicitudesPorLocalidad();
-    
+
+
+    @Query("SELECT s.usuario.idUsuario FROM SolicitudRecoleccionEntity s WHERE s.idSolicitud = :idSolicitud")
+    Optional<Long> findUsuarioIdByIdSolicitud(@Param("idSolicitud") Long idSolicitud);
 }
