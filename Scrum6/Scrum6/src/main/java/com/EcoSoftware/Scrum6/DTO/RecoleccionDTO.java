@@ -15,6 +15,8 @@ public class RecoleccionDTO {
 
     private EstadoRecoleccion estado;
     private LocalDateTime fechaRecoleccion;
+    private Integer ordenParada;
+
     private String observaciones;
     private String evidencia;
     private OffsetDateTime fechaCreacionRecoleccion;

@@ -46,6 +46,9 @@ public class UsuarioDTO {
 
     private String representanteLegal;
 
+        private String Rut;
+
+
     private String zona_de_trabajo;
 
     private String horario;
@@ -57,6 +60,8 @@ public class UsuarioDTO {
     private String imagen_perfil;
 
     private String certificaciones;
+
+    private String Documento;
 
     private Boolean estado;
 
