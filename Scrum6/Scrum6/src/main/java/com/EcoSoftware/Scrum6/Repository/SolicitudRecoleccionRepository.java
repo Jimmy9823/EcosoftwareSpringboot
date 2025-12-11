@@ -42,24 +42,27 @@ public interface SolicitudRecoleccionRepository extends JpaRepository<SolicitudR
     // crear graficos 
 
     // Consulta agrupada por motivo de rechazo
-    @org.springframework.data.jpa.repository.Query("SELECT s.motivoRechazo, COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada GROUP BY s.motivoRechazo")
-    List<Object[]> obtenerRechazadasAgrupadasPorMotivo();
+@Query("SELECT COALESCE(s.motivoRechazo, 'Sin motivo registrado'), COUNT(s) " +
+       "FROM SolicitudRecoleccionEntity s " +
+       "WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada " +
+       "GROUP BY s.motivoRechazo")
+List<Object[]> obtenerRechazadasAgrupadasPorMotivo();
 
-    // Contar solicitudes aceptadas
-    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Aceptada")
-    Long countAceptadas();
+// Contar solicitudes aceptadas
+@Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Aceptada")
+Long countAceptadas();
 
-    // Contar solicitudes pendientes
+// Contar solicitudes pendientes
+@Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Pendiente")
+Long countPendientes();
 
-    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Pendiente")
-    Long countPendientes();
+@Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada")
+Long countRechazadas();
 
-    @org.springframework.data.jpa.repository.Query("SELECT COUNT(s) FROM SolicitudRecoleccionEntity s WHERE s.estadoPeticion = com.EcoSoftware.Scrum6.Enums.EstadoPeticion.Rechazada")
-    Long countRechazadas();
+// Solicitudes por localidad
+@Query("SELECT CAST(s.localidad AS string), COUNT(s) FROM SolicitudRecoleccionEntity s GROUP BY s.localidad")
+List<Object[]> obtenerSolicitudesPorLocalidad();
 
-    // Solicitudes por localidad
-    @org.springframework.data.jpa.repository.Query("SELECT s.localidad, COUNT(s) FROM SolicitudRecoleccionEntity s GROUP BY s.localidad")
-    List<Object[]> obtenerSolicitudesPorLocalidad();
 
 
     @Query("SELECT s.usuario.idUsuario FROM SolicitudRecoleccionEntity s WHERE s.idSolicitud = :idSolicitud")

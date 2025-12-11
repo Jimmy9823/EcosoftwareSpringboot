@@ -19,6 +19,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
@@ -77,6 +79,8 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     @Autowired
     private TemplateEngine templateEngine;
 
+    private static final Logger logger = LoggerFactory.getLogger(SolicitudRecoleccionServiceImpl.class);
+
     public SolicitudRecoleccionServiceImpl(SolicitudRecoleccionRepository solicitudRepository,
             UsuarioRepository usuarioRepository, EmailService emailService) {
         this.solicitudRepository = solicitudRepository;
@@ -106,6 +110,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         dto.setFechaCreacionSolicitud(entity.getFechaCreacionSolicitud());
         dto.setFechaProgramada(entity.getFechaProgramada());
         dto.setRecoleccionId(entity.getRecoleccion() != null ? entity.getRecoleccion().getIdRecoleccion() : null);
+        dto.setMotivoRechazo(entity.getMotivoRechazo());
         return dto;
     }
 
@@ -243,19 +248,32 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             throw new RuntimeException("Solo se pueden rechazar solicitudes pendientes");
         }
 
+        // Guardar el motivo en la entidad
+        solicitud.setMotivoRechazo(motivo != null && !motivo.isBlank() ? motivo : "No especificado");
         solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
 
-        // Notificar al usuario
+        // Notificar al usuario con template Thymeleaf (capturamos cualquier error de email/template)
         UsuarioEntity usuarioSolicitante = saved.getUsuario();
-        String asunto = " Solicitud de recolección rechazada";
-        String contenido = "Hola " + usuarioSolicitante.getNombre() + ",\n\n"
-                + "Lamentamos informarte que tu solicitud de recolección (ID: " + saved.getIdSolicitud()
-                + ") ha sido **Rechazada**.\n\n"
-                + "Motivo del rechazo: " + (motivo != null ? motivo : "No especificado") + "\n\n"
-                + "Por favor, revisa tu solicitud y vuelve a intentarlo si es necesario.\n\n"
-                + "EcoSoftware - Gestión de Residuos";
-        emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenido);
+        try {
+            Context context = new Context();
+            context.setVariable("nombre", usuarioSolicitante.getNombre());
+            context.setVariable("idSolicitud", saved.getIdSolicitud());
+            context.setVariable("motivoRechazo", saved.getMotivoRechazo());
+            context.setVariable("tipoResiduo", saved.getTipoResiduo());
+            context.setVariable("cantidad", saved.getCantidad());
+            context.setVariable("descripcion", saved.getDescripcion());
+            context.setVariable("localidad", saved.getLocalidad());
+            context.setVariable("ubicacion", saved.getUbicacion());
+            context.setVariable("fechaProgramada", saved.getFechaProgramada() != null ? saved.getFechaProgramada().toString() : "N/A");
+
+            String contenidoHtml = templateEngine.process("email-rechazaSolicitud", context);
+
+            String asunto = "Solicitud de recolección rechazada";
+            emailService.enviarCorreo(usuarioSolicitante.getCorreo(), asunto, contenidoHtml);
+        } catch (Exception e) {
+            logger.error("Error al procesar/enviar el email de rechazo para solicitudId={}", solicitudId, e);
+        }
 
         return entityToDTO(saved);
     }
@@ -294,7 +312,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     // ==========================================================
     private List<SolicitudRecoleccionDTO> obtenerSolicitudesFiltradas(EstadoPeticion estado, Localidad localidad,
             LocalDateTime fechaInicio, LocalDateTime fechaFin) {
-        // 1️. Consultar según filtros
+        // 1. Consultar según filtros
         List<SolicitudRecoleccionEntity> entities;
         if (estado != null && localidad != null) {
             entities = solicitudRepository.findByLocalidadAndEstadoPeticion(localidad, estado);
@@ -306,45 +324,22 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
             entities = solicitudRepository.findAll();
         }
 
-        // 2️. Convertir a DTO
+        // 2. Convertir a DTO
         List<SolicitudRecoleccionDTO> dtos = entities.stream()
                 .map(this::entityToDTO)
                 .collect(Collectors.toList());
 
-        // 3️. Filtrar por fechas (opcional)
+        // 3. Filtrar por fechas (opcional)
         if (fechaInicio == null && fechaFin == null) {
             return dtos;
         }
 
         return dtos.stream().filter(dto -> {
-            boolean inRange = false;
-
-            // Usar una función auxiliar para verificar el rango
-            java.util.function.Function<LocalDateTime, Boolean> isDateInRange = (date) -> {
-                boolean cond = true;
-                if (fechaInicio != null && date.isBefore(fechaInicio))
-                    cond = false;
-                if (fechaFin != null && date.isAfter(fechaFin))
-                    cond = false;
-                return cond;
-            };
-
-            // Filtrar por fecha de creación (si existe)
-            if (dto.getFechaCreacionSolicitud() != null) {
-                LocalDateTime fc = dto.getFechaCreacionSolicitud().toLocalDateTime();
-                if (isDateInRange.apply(fc))
-                    inRange = true;
-            }
-
-            // Si no está en rango por fecha de creación, revisar fecha programada (si
-            // existe)
-            if (!inRange && dto.getFechaProgramada() != null) {
-                LocalDateTime fp = dto.getFechaProgramada();
-                if (isDateInRange.apply(fp))
-                    inRange = true;
-            }
-
-            return inRange;
+            LocalDateTime fecha = dto.getFechaProgramada();
+            if (fecha == null) return false;
+            if (fechaInicio != null && fecha.isBefore(fechaInicio)) return false;
+            if (fechaFin != null && fecha.isAfter(fechaFin)) return false;
+            return true;
         }).collect(Collectors.toList());
     }
 

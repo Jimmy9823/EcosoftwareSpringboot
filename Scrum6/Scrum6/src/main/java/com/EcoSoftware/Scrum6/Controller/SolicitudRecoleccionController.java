@@ -6,9 +6,6 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
-import com.EcoSoftware.Scrum6.Implement.Factory.GraficasFactory;
-import com.EcoSoftware.Scrum6.Service.graficasDatos;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -29,45 +26,13 @@ import com.itextpdf.text.DocumentException;
 
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * Controlador REST que gestiona las operaciones relacionadas con las solicitudes de recolección.
- * Define los endpoints para crear, listar, actualizar, aceptar, rechazar y exportar solicitudes.
- */
 @RestController
 @RequestMapping("/api/solicitudes")
 public class SolicitudRecoleccionController {
-    @Autowired
-    private GraficasFactory factory;
 
-        // Cantidad de pendientes y aceptadas
-        @GetMapping("/graficos/pendientes-aceptadas")
-        public ResponseEntity<java.util.Map<String, Long>> getPendientesYAceptadas() {
-            java.util.Map<String, Long> result = new java.util.HashMap<>();
-            result.put("pendientes", solicitudService.contarPendientes());
-            result.put("aceptadas", solicitudService.contarAceptadas());
-            return ResponseEntity.ok(result);
-        }
-    // ===================== ENDPOINTS PARA GRÁFICOS =====================
-
-    // Motivos de rechazo y cantidad
-    @GetMapping("/graficos/rechazadas-por-motivo")
-    public ResponseEntity<List<Object[]>> getRechazadasPorMotivo() {
-        return ResponseEntity.ok(solicitudService.obtenerRechazadasPorMotivo());
-    }
-
-  
-    // Solicitudes por localidad
-    @GetMapping("/graficos/solicitudes-por-localidad")
-    public ResponseEntity<List<Object[]>> getSolicitudesPorLocalidad() {
-        return ResponseEntity.ok(solicitudService.obtenerSolicitudesPorLocalidad());
-    }
-
-
-
-    // Inyección del servicio que maneja la lógica de negocio
+    // Servicio de solicitudes
     private final SolicitudRecoleccionService solicitudService;
 
-    // Constructor que inyecta el servicio de solicitudes
     public SolicitudRecoleccionController(SolicitudRecoleccionService solicitudService) {
         this.solicitudService = solicitudService;
     }
@@ -77,20 +42,18 @@ public class SolicitudRecoleccionController {
     // ========================================================
     @PostMapping
     public ResponseEntity<SolicitudRecoleccionDTO> crearSolicitud(@RequestBody SolicitudRecoleccionDTO dto) {
-        // Obtiene el usuario autenticado desde el contexto de seguridad
+
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String correoUsuario = auth.getName(); // El correo se extrae del token JWT
-        // Envía la solicitud al servicio con el correo del usuario autenticado
+        String correoUsuario = auth.getName();
+
         return ResponseEntity.ok(solicitudService.crearSolicitudConUsuario(dto, correoUsuario));
     }
-
 
     // ========================================================
     // OBTENER SOLICITUD POR ID
     // ========================================================
     @GetMapping("/{id}")
     public ResponseEntity<SolicitudRecoleccionDTO> obtenerPorId(@PathVariable Long id) {
-        // Retorna la solicitud correspondiente al ID recibido
         return ResponseEntity.ok(solicitudService.obtenerPorId(id));
     }
 
@@ -99,52 +62,46 @@ public class SolicitudRecoleccionController {
     // ========================================================
     @GetMapping
     public ResponseEntity<List<SolicitudRecoleccionDTO>> listarTodas() {
-        // Retorna la lista completa de solicitudes
         return ResponseEntity.ok(solicitudService.listarTodas());
     }
+
     @GetMapping("/idUsuario/{id}")
     public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorIdUsuario(@PathVariable Long id) {
-        // Retorna las solicitudes filtradas por su estado
         return ResponseEntity.ok(solicitudService.listarPorUsuario(id));
     }
+
     // ========================================================
     // LISTAR SOLICITUDES POR ESTADO
     // ========================================================
     @GetMapping("/estado/{estado}")
     public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorEstado(@PathVariable EstadoPeticion estado) {
-        // Retorna las solicitudes filtradas por su estado
         return ResponseEntity.ok(solicitudService.listarPorEstado(estado));
     }
 
     // ========================================================
     // LISTAR SOLICITUDES POR USUARIO
     // ========================================================
-
     @GetMapping("/usuario/{id}")
-public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuario(@PathVariable Long id) {
-    return ResponseEntity.ok(solicitudService.listarPorUsuario(id));
-}
+    public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuario(@PathVariable Long id) {
+        return ResponseEntity.ok(solicitudService.listarPorUsuario(id));
+    }
+
     // ========================================================
     // LISTAR SOLICITUDES POR USUARIO Y ESTADO
     // ========================================================
+    @GetMapping("/usuario/{id}/estado/{estado}")
+    public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
+            @PathVariable Long id,
+            @PathVariable EstadoPeticion estado) {
 
-@GetMapping("/usuario/{id}/estado/{estado}")
-public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
-        @PathVariable Long id,
-        @PathVariable EstadoPeticion estado
-) {
-    return ResponseEntity.ok(
-            solicitudService.listarPorUsuarioYEstado(id, estado)
-    );
-}
-
+        return ResponseEntity.ok(solicitudService.listarPorUsuarioYEstado(id, estado));
+    }
 
     // ========================================================
-    // ACEPTAR SOLICITUD (Recolector)
+    // ACEPTAR SOLICITUD
     // ========================================================
     @PostMapping("/{id}/aceptar")
     public ResponseEntity<SolicitudRecoleccionDTO> aceptarSolicitud(@PathVariable Long id) {
-        // Llama al servicio para aceptar la solicitud indicada
         return ResponseEntity.ok(solicitudService.aceptarSolicitud(id));
     }
 
@@ -154,37 +111,30 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
     @PostMapping("/{id}/rechazar")
     public ResponseEntity<SolicitudRecoleccionDTO> rechazarSolicitud(
             @PathVariable Long id,
-            @RequestParam String motivo) {
-        // Llama al servicio para rechazar la solicitud con un motivo
+            @RequestParam(required = false, defaultValue = "") String motivo) {
+
         return ResponseEntity.ok(solicitudService.rechazarSolicitud(id, motivo));
     }
 
     // ========================================================
-    // ACTUALIZAR SOLICITUD (solo del usuario logueado)
+    // ACTUALIZAR SOLICITUD
     // ========================================================
     @PutMapping("/{id}")
     public ResponseEntity<SolicitudRecoleccionDTO> actualizarSolicitud(
             @PathVariable Long id,
             @RequestBody SolicitudRecoleccionDTO dto) {
 
-        // Obtiene el correo del usuario autenticado
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         String correoUsuario = auth.getName();
 
-        // Asigna el ID recibido a la solicitud antes de actualizar
         dto.setIdSolicitud(id);
 
-        // Actualiza la solicitud asociada al usuario autenticado
         return ResponseEntity.ok(solicitudService.actualizarSolicitudConUsuario(dto, correoUsuario));
     }
 
-    
-
     // ========================================================
-    // EXPORTACIONES (Excel / PDF)
+    // EXPORTAR A EXCEL
     // ========================================================
-
-    // Generar reporte Excel de solicitudes filtradas
     @GetMapping("/export/excel")
     public void exportToExcel(
             @RequestParam(required = false) String estado,
@@ -193,21 +143,20 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
             @RequestParam(required = false) String fechaHasta,
             HttpServletResponse response) throws IOException {
 
-        // Conversión de parámetros opcionales a enums y fechas
         EstadoPeticion estadoEnum = parseEstado(estado);
         Localidad localidadEnum = parseLocalidad(localidad);
         LocalDateTime inicio = parseFechaInicio(fechaDesde);
         LocalDateTime fin = parseFechaFin(fechaHasta);
 
-        // Configuración de encabezados y tipo de archivo Excel
         response.setContentType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
         response.setHeader("Content-Disposition", "attachment; filename=solicitudes.xlsx");
 
-        // Generación del reporte
         solicitudService.generarReporteExcel(estadoEnum, localidadEnum, inicio, fin, response.getOutputStream());
     }
 
-    // Generar reporte PDF de solicitudes filtradas
+    // ========================================================
+    // EXPORTAR A PDF
+    // ========================================================
     @GetMapping("/export/pdf")
     public void exportToPDF(
             @RequestParam(required = false) String estado,
@@ -216,25 +165,20 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
             @RequestParam(required = false) String fechaHasta,
             HttpServletResponse response) throws IOException, DocumentException {
 
-        // Conversión de parámetros opcionales a enums y fechas
         EstadoPeticion estadoEnum = parseEstado(estado);
         Localidad localidadEnum = parseLocalidad(localidad);
         LocalDateTime inicio = parseFechaInicio(fechaDesde);
         LocalDateTime fin = parseFechaFin(fechaHasta);
 
-        // Configuración de encabezados y tipo de archivo PDF
         response.setContentType("application/pdf");
         response.setHeader("Content-Disposition", "attachment; filename=solicitudes.pdf");
 
-        // Generación del reporte
         solicitudService.generarReportePDF(estadoEnum, localidadEnum, inicio, fin, response.getOutputStream());
     }
 
     // ========================================================
-    // MÉTODOS AUXILIARES (Helpers)
+    // MÉTODOS AUXILIARES
     // ========================================================
-
-    // Convierte una cadena en el Enum EstadoPeticion, si es válida
     private EstadoPeticion parseEstado(String estado) {
         if (estado == null || estado.isBlank()) return null;
         for (EstadoPeticion ep : EstadoPeticion.values()) {
@@ -243,7 +187,6 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
         return null;
     }
 
-    // Convierte una cadena en el Enum Localidad, si es válida
     private Localidad parseLocalidad(String localidad) {
         if (localidad == null || localidad.isBlank()) return null;
         for (Localidad l : Localidad.values()) {
@@ -252,25 +195,15 @@ public ResponseEntity<List<SolicitudRecoleccionDTO>> listarPorUsuarioYEstado(
         return null;
     }
 
-    // Convierte una fecha en formato String al inicio del día
     private LocalDateTime parseFechaInicio(String fechaDesde) {
         if (fechaDesde == null || fechaDesde.isBlank()) return null;
         LocalDate d = LocalDate.parse(fechaDesde);
         return d.atStartOfDay();
     }
 
-    // Convierte una fecha en formato String al final del día
     private LocalDateTime parseFechaFin(String fechaHasta) {
         if (fechaHasta == null || fechaHasta.isBlank()) return null;
         LocalDate d = LocalDate.parse(fechaHasta);
         return LocalDateTime.of(d, LocalTime.MAX);
-    }
-
-    @GetMapping("/graficas/{tipo}")
-    public ResponseEntity<?> obtenerGrafica(@PathVariable String tipo) {
-
-        graficasDatos grafica = factory.obtenerGrafica(tipo);
-
-        return ResponseEntity.ok(grafica.traerDatos());
     }
 }
