@@ -21,6 +21,10 @@ public interface RecoleccionService {
     // Listar recolecciones activas de una ruta
     List<RecoleccionEntity> listarPorRuta(Long rutaId);
 
+    // Recolecciones que NO están asignadas a ninguna ruta y están activas
+List<RecoleccionEntity> listarSinRutaPorRecolector(Long recolectorId);
+
+
     // Actualizar estado de recolección (ej: Pendiente → Completada → Cancelada)
     RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado);
 

@@ -3,13 +3,14 @@ package com.EcoSoftware.Scrum6.Implement;
 import com.EcoSoftware.Scrum6.DTO.RecoleccionDTO;
 import com.EcoSoftware.Scrum6.Entity.RecoleccionEntity;
 import com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion;
+import com.EcoSoftware.Scrum6.Exception.RecoleccionCanceladaException;
 import com.EcoSoftware.Scrum6.Repository.RecoleccionRepository;
 import com.EcoSoftware.Scrum6.Service.RecoleccionService;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.EcoSoftware.Scrum6.Exception.RecoleccionCanceladaException;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +34,6 @@ public class RecoleccionServiceImpl implements RecoleccionService {
     // ========================================================
     // OBTENER RECOLECCIÓN POR ID
     // ========================================================
-    // Devuelve una recolección activa por su ID, lanza excepción si está cancelada
     @Override
     public Optional<RecoleccionEntity> obtenerPorId(Long id) {
         return recoleccionRepository.findById(id)
@@ -46,83 +46,115 @@ public class RecoleccionServiceImpl implements RecoleccionService {
     }
 
     // ========================================================
-    // LISTAR TODAS LAS RECOLECCIONES ACTIVAS
+    // LISTAR ACTIVAS
     // ========================================================
-    // Devuelve todas las recolecciones que no estén canceladas
     @Override
     public List<RecoleccionEntity> listarActivas() {
         return recoleccionRepository.findByEstadoNot(EstadoRecoleccion.Cancelada);
     }
 
-    // ========================================================
-    // LISTAR RECOLECCIONES POR RECOLECTOR
-    // ========================================================
-    // Lista recolecciones activas asignadas a un recolector específico
     @Override
     public List<RecoleccionEntity> listarPorRecolector(Long recolectorId) {
         return recoleccionRepository.findByRecolector_IdUsuarioAndEstadoNot(recolectorId, EstadoRecoleccion.Cancelada);
     }
 
-    // ========================================================
-    // LISTAR RECOLECCIONES POR RUTA
-    // ========================================================
-    // Lista recolecciones activas asociadas a una ruta determinada
     @Override
     public List<RecoleccionEntity> listarPorRuta(Long rutaId) {
         return recoleccionRepository.findByRuta_IdRutaAndEstadoNot(rutaId, EstadoRecoleccion.Cancelada);
     }
 
+    @Override
+    public List<RecoleccionEntity> listarSinRutaPorRecolector(Long recolectorId) {
+        return recoleccionRepository.findByRecolector_IdUsuarioAndRutaIsNullAndEstadoNot(
+                recolectorId, EstadoRecoleccion.Cancelada
+        );
+    }
+
     // ========================================================
-    // ACTUALIZAR ESTADO DE UNA RECOLECCIÓN
+    // CONTROL ESTRICTO DE CAMBIO DE ESTADO
     // ========================================================
-    // Cambia el estado de una recolección a un nuevo estado
     @Override
     @Transactional
     public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
-        RecoleccionEntity recoleccion = recoleccionRepository.findById(recoleccionId)
-                .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada con id: " + recoleccionId));
 
-        recoleccion.setEstado(nuevoEstado);
-        return recoleccionRepository.save(recoleccion);
+        RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
+                .orElseThrow(() -> new RuntimeException("Recolección no encontrada"));
+
+        EstadoRecoleccion anterior = r.getEstado();
+
+        // ESTADOS TERMINALES: no deben cambiar nunca
+        if (anterior == EstadoRecoleccion.Cancelada ||
+            anterior == EstadoRecoleccion.Fallida ||
+            anterior == EstadoRecoleccion.Completada) {
+            throw new IllegalStateException("No se puede modificar una recolección finalizada/cancelada/fallida");
+        }
+
+        // REGLAS DE TRANSICION
+        switch (anterior) {
+            case Pendiente:
+                if (!(nuevoEstado == EstadoRecoleccion.En_Progreso ||
+                      nuevoEstado == EstadoRecoleccion.Cancelada)) {
+                    throw new IllegalStateException("Una recolección pendiente solo puede pasar a En_Progreso o Cancelada");
+                }
+                break;
+
+            case En_Progreso:
+                if (!(nuevoEstado == EstadoRecoleccion.Completada ||
+                      nuevoEstado == EstadoRecoleccion.Fallida)) {
+                    throw new IllegalStateException("Una recolección en progreso solo puede ser Completada o Fallida");
+                }
+                break;
+
+            default:
+                throw new IllegalStateException("Transición no permitida");
+        }
+
+        r.setEstado(nuevoEstado);
+        return recoleccionRepository.save(r);
     }
 
     // ========================================================
-    // ACTUALIZAR DATOS DE UNA RECOLECCIÓN
+    // ACTUALIZAR DATOS (NO PERMITE CAMBIAR ESTADO)
     // ========================================================
-    // Actualiza campos que el recolector puede modificar
     @Override
     @Transactional
     public RecoleccionEntity actualizarRecoleccion(Long id, RecoleccionDTO dto) {
-        RecoleccionEntity recoleccion = recoleccionRepository.findById(id)
+        RecoleccionEntity r = recoleccionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
 
-        if (dto.getObservaciones() != null) {
-            recoleccion.setObservaciones(dto.getObservaciones());
-        }
-        if (dto.getEvidencia() != null) {
-            recoleccion.setEvidencia(dto.getEvidencia());
-        }
-        if (dto.getFechaRecoleccion() != null) {
-            recoleccion.setFechaRecoleccion(dto.getFechaRecoleccion());
-        }
-        if (dto.getEstado() != null) {
-            recoleccion.setEstado(dto.getEstado());
+        // No permitir cambios si está finalizada
+        if (r.getEstado() == EstadoRecoleccion.Cancelada ||
+            r.getEstado() == EstadoRecoleccion.Fallida ||
+            r.getEstado() == EstadoRecoleccion.Completada) {
+            throw new IllegalStateException("No se pueden modificar datos de una recolección cerrada");
         }
 
-        return recoleccionRepository.save(recoleccion);
+        if (dto.getObservaciones() != null) r.setObservaciones(dto.getObservaciones());
+        if (dto.getEvidencia() != null) r.setEvidencia(dto.getEvidencia());
+        if (dto.getFechaRecoleccion() != null) r.setFechaRecoleccion(dto.getFechaRecoleccion());
+
+        // Estado solo puede cambiarse por actualizarEstado()
+        if (dto.getEstado() != null) {
+            throw new IllegalStateException("El estado solo puede cambiarse mediante actualizarEstado()");
+        }
+
+        return recoleccionRepository.save(r);
     }
 
     // ========================================================
-    // ELIMINAR RECOLECCIÓN (LÓGICAMENTE)
+    // ELIMINAR LÓGICAMENTE = CANCELAR
     // ========================================================
-    // Marca una recolección como cancelada sin eliminarla físicamente
     @Override
     @Transactional
     public void eliminarLogicamente(Long recoleccionId) {
-        RecoleccionEntity recoleccion = recoleccionRepository.findById(recoleccionId)
-                .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada con id: " + recoleccionId));
+        RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
+                .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
 
-        recoleccion.setEstado(EstadoRecoleccion.Cancelada);
-        recoleccionRepository.save(recoleccion);
+        if (r.getRuta() != null) {
+            throw new IllegalStateException("No se puede cancelar una recolección que ya está en una ruta");
+        }
+
+        r.setEstado(EstadoRecoleccion.Cancelada);
+        recoleccionRepository.save(r);
     }
 }

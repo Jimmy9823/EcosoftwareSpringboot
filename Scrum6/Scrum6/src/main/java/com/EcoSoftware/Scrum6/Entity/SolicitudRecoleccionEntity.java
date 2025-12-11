@@ -1,5 +1,6 @@
 package com.EcoSoftware.Scrum6.Entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -72,6 +73,13 @@ public class SolicitudRecoleccionEntity {
     @Column(nullable = false, length = 255)
     @NotNull(message = "La ubicación es obligatoria")
     private String ubicacion;
+
+    @Column(nullable = true, precision = 10, scale = 7)
+private BigDecimal latitude;
+
+@Column(nullable = true, precision = 10, scale = 7)
+private BigDecimal longitude;
+
 
     @Column(name = "evidencia", nullable = false, length = 500)
     @NotNull(message = "La evidencia es obligatoria")

@@ -106,6 +106,8 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         dto.setDescripcion(entity.getDescripcion());
         dto.setLocalidad(entity.getLocalidad());
         dto.setUbicacion(entity.getUbicacion());
+        dto.setLatitude(entity.getLatitude());
+        dto.setLongitude(entity.getLongitude());
         dto.setEvidencia(entity.getEvidencia());
         dto.setFechaCreacionSolicitud(entity.getFechaCreacionSolicitud());
         dto.setFechaProgramada(entity.getFechaProgramada());
@@ -132,6 +134,9 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         entity.setDescripcion(dto.getDescripcion());
         entity.setLocalidad(dto.getLocalidad());
         entity.setUbicacion(dto.getUbicacion());
+        entity.setLatitude(dto.getLatitude());
+entity.setLongitude(dto.getLongitude());
+
         entity.setEvidencia(dto.getEvidencia());
         entity.setFechaProgramada(dto.getFechaProgramada());
         entity.setEstadoPeticion(EstadoPeticion.Pendiente);
@@ -299,6 +304,9 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         solicitud.setDescripcion(dto.getDescripcion());
         solicitud.setLocalidad(dto.getLocalidad());
         solicitud.setUbicacion(dto.getUbicacion());
+        solicitud.setLatitude(dto.getLatitude());
+solicitud.setLongitude(dto.getLongitude());
+
         solicitud.setEvidencia(dto.getEvidencia());
         solicitud.setFechaProgramada(dto.getFechaProgramada());
 

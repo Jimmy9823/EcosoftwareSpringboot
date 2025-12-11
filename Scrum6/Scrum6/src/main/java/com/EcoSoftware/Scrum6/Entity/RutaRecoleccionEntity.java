@@ -26,6 +26,10 @@ public class RutaRecoleccionEntity {
     @JoinColumn(name = "recolector_id", nullable = false)
     private UsuarioEntity recolector;
 
+    @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL, orphanRemoval = true)
+private List<RutaParadaEntity> paradas;
+
+
     // Recolecciones que se asignan a esta ruta
     @OneToMany(mappedBy = "ruta", cascade = CascadeType.ALL)
     private List<RecoleccionEntity> recolecciones;

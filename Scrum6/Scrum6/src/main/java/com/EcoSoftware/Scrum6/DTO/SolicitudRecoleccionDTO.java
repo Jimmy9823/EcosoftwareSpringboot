@@ -1,5 +1,6 @@
 package com.EcoSoftware.Scrum6.DTO;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
@@ -21,6 +22,8 @@ public class SolicitudRecoleccionDTO {
     private String descripcion;
     private Localidad localidad;
     private String ubicacion;
+    private BigDecimal latitude;
+    private BigDecimal longitude;
     private String evidencia;
     private OffsetDateTime fechaCreacionSolicitud;
     private LocalDateTime fechaProgramada;

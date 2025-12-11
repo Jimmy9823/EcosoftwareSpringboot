@@ -210,7 +210,6 @@ public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) th
             usuario.setImagen_perfil(url);
             break;
         default:
-            // Si quieres soportar otros tipos, agrégalos
             break;
     }
 

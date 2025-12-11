@@ -37,10 +37,13 @@ public class RecoleccionEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private EstadoRecoleccion estado = EstadoRecoleccion.En_Progreso;
+private EstadoRecoleccion estado = EstadoRecoleccion.Pendiente;
 
     @Column(name = "fecha_recoleccion")
     private LocalDateTime fechaRecoleccion;
+
+    private Integer ordenParada;
+
 
     @Column(columnDefinition = "TEXT")
     private String observaciones;

@@ -10,7 +10,7 @@ public class RutaRecoleccionDTO {
     private Long idRuta;
     private Long recolectorId;       // Usuario (empresa/reciclador) dueño de la ruta
 
-    private List<Long> recoleccionesIds; // IDs de las recolecciones asignadas a esta ruta
+private List<RutaParadaDTO> paradas;
 
     private String nombre;
     private String descripcion;
