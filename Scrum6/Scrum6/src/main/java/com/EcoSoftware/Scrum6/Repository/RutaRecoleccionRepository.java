@@ -8,11 +8,5 @@ import java.util.List;
 
 @Repository
 public interface RutaRecoleccionRepository extends JpaRepository<RutaRecoleccionEntity, Long> {
-
-    // Rutas creadas por un recolector
     List<RutaRecoleccionEntity> findByRecolector_IdUsuario(Long recolectorId);
-
-    // Buscar rutas por nombre 
-    List<RutaRecoleccionEntity> findByNombreContainingIgnoreCase(String nombre);
 }
-

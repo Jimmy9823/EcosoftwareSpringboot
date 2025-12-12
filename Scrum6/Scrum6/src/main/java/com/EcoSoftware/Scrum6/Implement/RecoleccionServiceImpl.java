@@ -74,44 +74,48 @@ public class RecoleccionServiceImpl implements RecoleccionService {
     // CONTROL ESTRICTO DE CAMBIO DE ESTADO
     // ========================================================
     @Override
-    @Transactional
-    public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
+@Transactional
+public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
 
-        RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
-                .orElseThrow(() -> new RuntimeException("Recolección no encontrada"));
+    RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
+            .orElseThrow(() -> new RuntimeException("Recolección no encontrada"));
 
-        EstadoRecoleccion anterior = r.getEstado();
+    EstadoRecoleccion anterior = r.getEstado();
 
-        // ESTADOS TERMINALES: no deben cambiar nunca
-        if (anterior == EstadoRecoleccion.Cancelada ||
-            anterior == EstadoRecoleccion.Fallida ||
-            anterior == EstadoRecoleccion.Completada) {
-            throw new IllegalStateException("No se puede modificar una recolección finalizada/cancelada/fallida");
-        }
-
-        // REGLAS DE TRANSICION
-        switch (anterior) {
-            case Pendiente:
-                if (!(nuevoEstado == EstadoRecoleccion.En_Progreso ||
-                      nuevoEstado == EstadoRecoleccion.Cancelada)) {
-                    throw new IllegalStateException("Una recolección pendiente solo puede pasar a En_Progreso o Cancelada");
-                }
-                break;
-
-            case En_Progreso:
-                if (!(nuevoEstado == EstadoRecoleccion.Completada ||
-                      nuevoEstado == EstadoRecoleccion.Fallida)) {
-                    throw new IllegalStateException("Una recolección en progreso solo puede ser Completada o Fallida");
-                }
-                break;
-
-            default:
-                throw new IllegalStateException("Transición no permitida");
-        }
-
-        r.setEstado(nuevoEstado);
-        return recoleccionRepository.save(r);
+    if (anterior == EstadoRecoleccion.Cancelada ||
+        anterior == EstadoRecoleccion.Fallida ||
+        anterior == EstadoRecoleccion.Completada) {
+        throw new IllegalStateException("No se puede modificar una recolección finalizada/cancelada/fallida");
     }
+
+    switch (anterior) {
+        case Pendiente:
+            if (!(nuevoEstado == EstadoRecoleccion.En_Progreso ||
+                  nuevoEstado == EstadoRecoleccion.Cancelada)) {
+                throw new IllegalStateException("Una recolección pendiente solo puede pasar a En_Progreso o Cancelada");
+            }
+            break;
+
+        case En_Progreso:
+            if (!(nuevoEstado == EstadoRecoleccion.Completada ||
+                  nuevoEstado == EstadoRecoleccion.Fallida)) {
+                throw new IllegalStateException("Una recolección en progreso solo puede ser Completada o Fallida");
+            }
+            break;
+
+        default:
+            throw new IllegalStateException("Transición no permitida");
+    }
+
+    r.setEstado(nuevoEstado);
+
+    // Si se marca como completada, fijar fecha de recolección si no existe
+    if (nuevoEstado == EstadoRecoleccion.Completada && r.getFechaRecoleccion() == null) {
+        r.setFechaRecoleccion(java.time.LocalDateTime.now());
+    }
+
+    return recoleccionRepository.save(r);
+}
 
     // ========================================================
     // ACTUALIZAR DATOS (NO PERMITE CAMBIAR ESTADO)

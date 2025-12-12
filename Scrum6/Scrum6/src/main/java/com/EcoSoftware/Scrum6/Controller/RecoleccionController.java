@@ -31,10 +31,7 @@ public class RecoleccionController {
                         .collect(Collectors.toList())
         );
     }
-    // ========================================================
-    // OBTENER RECOLECCIÓN POR ID
-    // ========================================================
-    // Devuelve una recolección específica según su ID
+
     @GetMapping("/{id}")
     public ResponseEntity<RecoleccionDTO> obtenerPorId(@PathVariable Long id) {
         return recoleccionService.obtenerPorId(id)
@@ -42,32 +39,17 @@ public class RecoleccionController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    // -> LISTAR RECOLECCIONES DE UN RECOLECTOR (público)
     @GetMapping("/recolector/{id}")
     public ResponseEntity<List<RecoleccionDTO>> listarPorRecolector(@PathVariable Long id) {
         return ResponseEntity.ok(
-                recoleccionService.ListarTodasRecolector(id).stream()
+                recoleccionService.listarPorRecolector(id).stream()
                         .map(this::toDto)
                         .collect(Collectors.toList())
         );
     }
 
-    // ========================================================
-    // LISTAR TODAS LAS RECOLECCIONES ACTIVAS
-    // ========================================================
-    // Devuelve todas las recolecciones cuyo estado no sea Cancelada
-    @GetMapping("/activas")
-    public ResponseEntity<List<RecoleccionDTO>> listarActivas() {
-        return ResponseEntity.ok(
-                recoleccionService.listarActivas().stream()
-                        .map(this::toDto)
-                        .collect(Collectors.toList())
-        );
-    }
-
-    // ========================================================
-    // LISTAR RECOLECCIONES DEL RECOLECTOR AUTENTICADO
-    // ========================================================
-    // Obtiene las recolecciones asignadas al usuario actualmente logueado
+    // -> LISTAR RECOLECCIONES DEL RECOLECTOR AUTENTICADO (todas las asignadas)
     @GetMapping("/mis-recolecciones")
     public ResponseEntity<List<RecoleccionDTO>> listarPorRecolector() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -83,10 +65,33 @@ public class RecoleccionController {
         );
     }
 
-    // ========================================================
-    // LISTAR RECOLECCIONES POR RUTA
-    // ========================================================
-    // Devuelve todas las recolecciones asignadas a una ruta específica
+    // -> LISTAR RECOLECCIONES EN PROCESO SIN RUTA (para crear rutas)
+    @GetMapping("/mis-recolecciones-en-proceso")
+    public ResponseEntity<List<RecoleccionDTO>> listarMisRecoleccionesEnProcesoSinRuta() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String correo = auth.getName();
+
+        UsuarioEntity recolector = usuarioRepository.findByCorreoAndEstadoTrue(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado o inactivo"));
+
+        List<RecoleccionDTO> dtos = recoleccionService
+                .listarSinRutaPorRecolector(recolector.getIdUsuario())
+                .stream()
+                .map(this::toDto)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/activas")
+    public ResponseEntity<List<RecoleccionDTO>> listarActivas() {
+        return ResponseEntity.ok(
+                recoleccionService.listarActivas().stream()
+                        .map(this::toDto)
+                        .collect(Collectors.toList())
+        );
+    }
+
     @GetMapping("/ruta/{id}")
     public ResponseEntity<List<RecoleccionDTO>> listarPorRuta(@PathVariable Long id) {
         return ResponseEntity.ok(
@@ -96,10 +101,6 @@ public class RecoleccionController {
         );
     }
 
-    // ========================================================
-    // ACTUALIZAR ESTADO DE UNA RECOLECCIÓN
-    // ========================================================
-    // Permite cambiar el estado de la recolección a Pendiente, Completada, etc.
     @PutMapping("/{id}/estado")
     public ResponseEntity<RecoleccionDTO> actualizarEstado(
             @PathVariable Long id,
@@ -109,10 +110,6 @@ public class RecoleccionController {
         return ResponseEntity.ok(toDto(actualizadaEstado));
     }
 
-    // ========================================================
-    // ACTUALIZAR RECOLECCIÓN
-    // ========================================================
-    // Modifica los campos permitidos de una recolección por el recolector asignado
     @PutMapping("/{id}")
     public ResponseEntity<RecoleccionDTO> actualizarRecoleccion(
             @PathVariable Long id,
@@ -122,20 +119,12 @@ public class RecoleccionController {
         return ResponseEntity.ok(toDto(actualizar));
     }
 
-    // ========================================================
-    // ELIMINAR RECOLECCIÓN (LÓGICAMENTE)
-    // ========================================================
-    // Marca la recolección como Cancelada sin eliminarla físicamente
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarLogicamente(@PathVariable Long id) {
         recoleccionService.eliminarLogicamente(id);
         return ResponseEntity.noContent().build();
     }
 
-    // ========================================================
-    // MAPPER ENTITY → DTO
-    // ========================================================
-    // Convierte una entidad Recolección a su DTO correspondiente
     private RecoleccionDTO toDto(RecoleccionEntity r) {
         RecoleccionDTO dto = new RecoleccionDTO();
         dto.setIdRecoleccion(r.getIdRecoleccion());
@@ -144,6 +133,7 @@ public class RecoleccionController {
         dto.setRutaId(r.getRuta() != null ? r.getRuta().getIdRuta() : null);
         dto.setEstado(r.getEstado());
         dto.setFechaRecoleccion(r.getFechaRecoleccion());
+        dto.setOrdenParada(r.getOrdenParada());           // <- añadido
         dto.setObservaciones(r.getObservaciones());
         dto.setEvidencia(r.getEvidencia());
         dto.setFechaCreacionRecoleccion(r.getFechaCreacionRecoleccion());

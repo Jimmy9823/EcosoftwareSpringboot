@@ -215,7 +215,7 @@ entity.setLongitude(dto.getLongitude());
         RecoleccionEntity recoleccion = new RecoleccionEntity();
         recoleccion.setSolicitud(solicitud);
         recoleccion.setRecolector(recolector);
-        recoleccion.setEstado(com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion.En_Progreso);
+        recoleccion.setEstado(com.EcoSoftware.Scrum6.Enums.EstadoRecoleccion.Pendiente);
         recoleccion.setFechaRecoleccion(solicitud.getFechaProgramada());
         recoleccion.setEvidencia(solicitud.getEvidencia());
         recoleccion.setObservaciones("Recolección iniciada y aceptada por: " + recolector.getNombre());
