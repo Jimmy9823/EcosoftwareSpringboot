@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UsuarioDTO {
+    //Todos los usuarios
     private Long idUsuario;
 
     @NotNull(message = "El rol es obligatorio")
@@ -42,11 +43,12 @@ public class UsuarioDTO {
 
     private String localidad;
 
+    //empresa
     private String nit;
 
     private String representanteLegal;
 
-        private String Rut;
+    private String Rut;
 
 
     private String zona_de_trabajo;
