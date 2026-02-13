@@ -5,4 +5,5 @@ public enum EstadoPeticion {
     Aceptada,
     Cancelada,
     Rechazada
+
 }

@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,127 +21,156 @@ public class RecoleccionServiceImpl implements RecoleccionService {
     private final RecoleccionRepository recoleccionRepository;
 
     @Override
-    public List<RecoleccionEntity> listarTodas() {
-        return recoleccionRepository.findAll();
+    public List<RecoleccionDTO> listarTodas() {
+        return recoleccionRepository.findAll()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+
     }
 
-    @Override
-    public List<RecoleccionEntity> ListarTodasRecolector(Long recolectorId) {
-        return recoleccionRepository.findByRecolector_IdUsuario(recolectorId);
-    }
+   @Override
+public List<RecoleccionDTO> listarTodasRecolector(Long recolectorId) {
+    return recoleccionRepository.findByRecolector_IdUsuario(recolectorId)
+            .stream()
+            .map(this::convertirADTO)
+            .toList();
+}
+
 
     // ========================================================
     // OBTENER RECOLECCIÓN POR ID
     // ========================================================
     @Override
-    public Optional<RecoleccionEntity> obtenerPorId(Long id) {
-        return recoleccionRepository.findById(id)
-                .map(r -> {
-                    if (r.getEstado() == EstadoRecoleccion.Cancelada) {
-                        throw new RecoleccionCanceladaException("Recolección cancelada");
-                    }
-                    return r;
-                });
+    public RecoleccionDTO obtenerPorId(Long id) {
+        RecoleccionEntity entity = recoleccionRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
+
+        if (entity.getEstado() == EstadoRecoleccion.Cancelada) {
+            throw new RecoleccionCanceladaException("Recolección cancelada");
+        }
+
+        return convertirADTO(entity);
     }
 
     // ========================================================
     // LISTAR ACTIVAS
     // ========================================================
     @Override
-    public List<RecoleccionEntity> listarActivas() {
-        return recoleccionRepository.findByEstadoNot(EstadoRecoleccion.Cancelada);
+    public List<RecoleccionDTO> listarActivas() {
+        return recoleccionRepository.findByEstadoNot(EstadoRecoleccion.Cancelada)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
     @Override
-    public List<RecoleccionEntity> listarPorRecolector(Long recolectorId) {
-        return recoleccionRepository.findByRecolector_IdUsuarioAndEstadoNot(recolectorId, EstadoRecoleccion.Cancelada);
-    }
+public List<RecoleccionDTO> listarPorRecolector(Long recolectorId) {
+    return recoleccionRepository
+            .findByRecolector_IdUsuarioAndEstadoNot(recolectorId, EstadoRecoleccion.Cancelada)
+            .stream()
+            .map(this::convertirADTO)
+            .toList();
+}
+
 
     @Override
-    public List<RecoleccionEntity> listarPorRuta(Long rutaId) {
-        return recoleccionRepository.findByRuta_IdRutaAndEstadoNot(rutaId, EstadoRecoleccion.Cancelada);
-    }
+public List<RecoleccionDTO> listarPorRuta(Long rutaId) {
+    return recoleccionRepository
+            .findByRuta_IdRutaAndEstadoNot(rutaId, EstadoRecoleccion.Cancelada)
+            .stream()
+            .map(this::convertirADTO)
+            .toList();
+}
+
 
     @Override
-    public List<RecoleccionEntity> listarSinRutaPorRecolector(Long recolectorId) {
-        return recoleccionRepository.findByRecolector_IdUsuarioAndRutaIsNullAndEstadoNot(
-                recolectorId, EstadoRecoleccion.Cancelada
-        );
+    public List<RecoleccionDTO> listarSinRutaPorRecolector(Long recolectorId) {
+        return recoleccionRepository
+                .findByRecolector_IdUsuarioAndRutaIsNullAndEstadoNot(
+                        recolectorId,
+                        EstadoRecoleccion.Cancelada)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
     // ========================================================
     // CONTROL ESTRICTO DE CAMBIO DE ESTADO
     // ========================================================
     @Override
-@Transactional
-public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
+    @Transactional
+    public RecoleccionDTO actualizarEstado(Long recoleccionId, EstadoRecoleccion nuevoEstado) {
 
-    RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
-            .orElseThrow(() -> new RuntimeException("Recolección no encontrada"));
+        RecoleccionEntity r = recoleccionRepository.findById(recoleccionId)
+                .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
 
-    EstadoRecoleccion anterior = r.getEstado();
+        EstadoRecoleccion anterior = r.getEstado();
 
-    if (anterior == EstadoRecoleccion.Cancelada ||
-        anterior == EstadoRecoleccion.Fallida ||
-        anterior == EstadoRecoleccion.Completada) {
-        throw new IllegalStateException("No se puede modificar una recolección finalizada/cancelada/fallida");
+        if (anterior == EstadoRecoleccion.Cancelada ||
+                anterior == EstadoRecoleccion.Fallida ||
+                anterior == EstadoRecoleccion.Completada) {
+            throw new IllegalStateException("No se puede modificar una recolección finalizada");
+        }
+
+        switch (anterior) {
+
+            case Pendiente:
+                if (!(nuevoEstado == EstadoRecoleccion.En_Progreso ||
+                        nuevoEstado == EstadoRecoleccion.Cancelada)) {
+                    throw new IllegalStateException("Transición inválida");
+                }
+                break;
+
+            case En_Progreso:
+                if (!(nuevoEstado == EstadoRecoleccion.Completada ||
+                        nuevoEstado == EstadoRecoleccion.Fallida)) {
+                    throw new IllegalStateException("Transición inválida");
+                }
+                break;
+
+            default:
+                throw new IllegalStateException("Transición no permitida");
+        }
+
+        r.setEstado(nuevoEstado);
+
+        if (nuevoEstado == EstadoRecoleccion.Completada && r.getFechaRecoleccion() == null) {
+            r.setFechaRecoleccion(java.time.LocalDateTime.now());
+        }
+
+        return convertirADTO(r);
     }
-
-    switch (anterior) {
-        case Pendiente:
-            if (!(nuevoEstado == EstadoRecoleccion.En_Progreso ||
-                  nuevoEstado == EstadoRecoleccion.Cancelada)) {
-                throw new IllegalStateException("Una recolección pendiente solo puede pasar a En_Progreso o Cancelada");
-            }
-            break;
-
-        case En_Progreso:
-            if (!(nuevoEstado == EstadoRecoleccion.Completada ||
-                  nuevoEstado == EstadoRecoleccion.Fallida)) {
-                throw new IllegalStateException("Una recolección en progreso solo puede ser Completada o Fallida");
-            }
-            break;
-
-        default:
-            throw new IllegalStateException("Transición no permitida");
-    }
-
-    r.setEstado(nuevoEstado);
-
-    // Si se marca como completada, fijar fecha de recolección si no existe
-    if (nuevoEstado == EstadoRecoleccion.Completada && r.getFechaRecoleccion() == null) {
-        r.setFechaRecoleccion(java.time.LocalDateTime.now());
-    }
-
-    return recoleccionRepository.save(r);
-}
 
     // ========================================================
     // ACTUALIZAR DATOS (NO PERMITE CAMBIAR ESTADO)
     // ========================================================
     @Override
     @Transactional
-    public RecoleccionEntity actualizarRecoleccion(Long id, RecoleccionDTO dto) {
+    public RecoleccionDTO actualizarRecoleccion(Long id, RecoleccionDTO dto) {
         RecoleccionEntity r = recoleccionRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Recolección no encontrada"));
 
         // No permitir cambios si está finalizada
         if (r.getEstado() == EstadoRecoleccion.Cancelada ||
-            r.getEstado() == EstadoRecoleccion.Fallida ||
-            r.getEstado() == EstadoRecoleccion.Completada) {
+                r.getEstado() == EstadoRecoleccion.Fallida ||
+                r.getEstado() == EstadoRecoleccion.Completada) {
             throw new IllegalStateException("No se pueden modificar datos de una recolección cerrada");
         }
 
-        if (dto.getObservaciones() != null) r.setObservaciones(dto.getObservaciones());
-        if (dto.getEvidencia() != null) r.setEvidencia(dto.getEvidencia());
-        if (dto.getFechaRecoleccion() != null) r.setFechaRecoleccion(dto.getFechaRecoleccion());
+        if (dto.getObservaciones() != null)
+            r.setObservaciones(dto.getObservaciones());
+        if (dto.getEvidencia() != null)
+            r.setEvidencia(dto.getEvidencia());
+        if (dto.getFechaRecoleccion() != null)
+            r.setFechaRecoleccion(dto.getFechaRecoleccion());
 
         // Estado solo puede cambiarse por actualizarEstado()
         if (dto.getEstado() != null) {
             throw new IllegalStateException("El estado solo puede cambiarse mediante actualizarEstado()");
         }
 
-        return recoleccionRepository.save(r);
+        return convertirADTO(r);
     }
 
     // ========================================================
@@ -161,4 +189,15 @@ public RecoleccionEntity actualizarEstado(Long recoleccionId, EstadoRecoleccion 
         r.setEstado(EstadoRecoleccion.Cancelada);
         recoleccionRepository.save(r);
     }
+
+    private RecoleccionDTO convertirADTO(RecoleccionEntity entity) {
+        RecoleccionDTO dto = new RecoleccionDTO();
+        dto.setIdRecoleccion(entity.getIdRecoleccion());
+        dto.setEstado(entity.getEstado());
+        dto.setObservaciones(entity.getObservaciones());
+        dto.setEvidencia(entity.getEvidencia());
+        dto.setFechaRecoleccion(entity.getFechaRecoleccion());
+        return dto;
+    }
+
 }

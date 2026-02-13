@@ -1,10 +1,15 @@
 package com.EcoSoftware.Scrum6.Controller;
 
-import com.EcoSoftware.Scrum6.DTO.CrearRutaDTO;
+import com.EcoSoftware.Scrum6.DTO.CrearRutaRequestDTO;
 import com.EcoSoftware.Scrum6.DTO.RutaRecoleccionDTO;
+import com.EcoSoftware.Scrum6.Enums.EstadoRuta;
+import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.RutaRecoleccionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,40 +20,97 @@ import java.util.List;
 public class RutaRecoleccionController {
 
     private final RutaRecoleccionService rutaService;
+    private final UsuarioRepository usuarioRepository;
 
-    // Crear ruta simple (compatible)
+    // ===========================
+    // CREAR RUTA
+    // ===========================
     @PostMapping
-    public ResponseEntity<RutaRecoleccionDTO> crear(@RequestBody RutaRecoleccionDTO dto) {
-        return ResponseEntity.ok(rutaService.crearRuta(dto));
+    public ResponseEntity<RutaRecoleccionDTO> crearRuta(@RequestBody CrearRutaRequestDTO dto) {
+        // Obtener usuario autenticado
+        UsuarioEntity recolector = obtenerUsuarioAutenticado();
+
+        // Asegurarse que el dto tenga el id del recolector
+        dto.setRecolectorId(recolector.getIdUsuario());
+
+        RutaRecoleccionDTO nuevaRuta = rutaService.crearRuta(dto);
+        return ResponseEntity.ok(nuevaRuta);
     }
 
-    // Crear ruta completa (crear + asignar recolecciones + crear paradas)
-    @PostMapping("/completa")
-    public ResponseEntity<RutaRecoleccionDTO> crearCompleta(@RequestBody CrearRutaDTO dto) {
-        return ResponseEntity.ok(rutaService.crearRutaCompleta(dto));
-    }
-
+    // ===========================
+    // OBTENER RUTA POR ID
+    // ===========================
     @GetMapping("/{id}")
     public ResponseEntity<RutaRecoleccionDTO> obtenerPorId(@PathVariable Long id) {
-        return rutaService.obtenerPorId(id).map(ResponseEntity::ok).orElse(ResponseEntity.notFound().build());
+        RutaRecoleccionDTO ruta = rutaService.obtenerPorId(id);
+        return ResponseEntity.ok(ruta);
     }
 
-    @GetMapping("/mis-rutas")
-    public ResponseEntity<List<RutaRecoleccionDTO>> listarMisRutas() {
-        // puedes pasar el id del recolector a listarPorRecolector desde security en service
-        // para simplicidad llamamos al servicio que internamente puede usar security si lo deseas
-        // Aquí devolvemos todas (o podrías filtrar por recolector con un método nuevo)
+    // ===========================
+    // LISTAR TODAS LAS RUTAS
+    // ===========================
+    @GetMapping
+    public ResponseEntity<List<RutaRecoleccionDTO>> listarTodas() {
         return ResponseEntity.ok(rutaService.listarTodas());
     }
 
-    @GetMapping("/recolector/{id}")
-    public ResponseEntity<List<RutaRecoleccionDTO>> listarPorRecolector(@PathVariable Long id) {
-        return ResponseEntity.ok(rutaService.listarPorRecolector(id));
+    // ===========================
+    // LISTAR RUTAS DEL RECOLECTOR AUTENTICADO
+    // ===========================
+    @GetMapping("/mis-rutas")
+    public ResponseEntity<List<RutaRecoleccionDTO>> listarPorRecolector() {
+        UsuarioEntity recolector = obtenerUsuarioAutenticado();
+        return ResponseEntity.ok(rutaService.listarPorRecolector(recolector.getIdUsuario()));
     }
 
+    // ===========================
+    // LISTAR RUTAS POR ESTADO
+    // ===========================
+    @GetMapping("/estado/{estado}")
+    public ResponseEntity<List<RutaRecoleccionDTO>> listarPorEstado(@PathVariable EstadoRuta estado) {
+        return ResponseEntity.ok(rutaService.listarPorEstado(estado));
+    }
+
+    // ===========================
+    // ACTUALIZAR ESTADO DE RUTA
+    // ===========================
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<RutaRecoleccionDTO> actualizarEstado(
+            @PathVariable Long id,
+            @RequestParam EstadoRuta estado
+    ) {
+        RutaRecoleccionDTO rutaActualizada = rutaService.actualizarEstado(id, estado);
+        return ResponseEntity.ok(rutaActualizada);
+    }
+
+    // ===========================
+    // ASIGNAR RECOLECCIONES A RUTA
+    // ===========================
+    @PutMapping("/{id}/asignar")
+    public ResponseEntity<RutaRecoleccionDTO> asignarRecolecciones(
+            @PathVariable Long id,
+            @RequestBody List<Long> recoleccionesIds
+    ) {
+        RutaRecoleccionDTO rutaActualizada = rutaService.asignarRecolecciones(id, recoleccionesIds);
+        return ResponseEntity.ok(rutaActualizada);
+    }
+
+    // ===========================
+    // ELIMINAR RUTA
+    // ===========================
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminarRuta(@PathVariable Long id) {
         rutaService.eliminarRuta(id);
         return ResponseEntity.noContent().build();
+    }
+
+    // ===========================
+    // MÉTODO AUXILIAR: OBTENER USUARIO AUTENTICADO
+    // ===========================
+    private UsuarioEntity obtenerUsuarioAutenticado() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String correo = auth.getName();
+        return usuarioRepository.findByCorreoAndEstadoTrue(correo)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado o inactivo"));
     }
 }

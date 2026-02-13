@@ -74,7 +74,6 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
     private final SolicitudRecoleccionRepository solicitudRepository;
     private final UsuarioRepository usuarioRepository;
     private final EmailService emailService;
-    
 
     @Autowired
     private TemplateEngine templateEngine;
@@ -116,8 +115,6 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         return dto;
     }
 
-    
-    
     // ==========================================================
     // Métodos CRUD
     // ==========================================================
@@ -135,7 +132,7 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         entity.setLocalidad(dto.getLocalidad());
         entity.setUbicacion(dto.getUbicacion());
         entity.setLatitude(dto.getLatitude());
-entity.setLongitude(dto.getLongitude());
+        entity.setLongitude(dto.getLongitude());
 
         entity.setEvidencia(dto.getEvidencia());
         entity.setFechaProgramada(dto.getFechaProgramada());
@@ -164,8 +161,6 @@ entity.setLongitude(dto.getLongitude());
         // 4. Enviar correo HTML
         String asunto = "Solicitud registrada correctamente";
         emailService.enviarCorreo(usuario.getCorreo(), asunto, contenidoHtml);
-
-        
 
         // 5. Devolver DTO
         return entityToDTO(saved);
@@ -258,7 +253,8 @@ entity.setLongitude(dto.getLongitude());
         solicitud.setEstadoPeticion(EstadoPeticion.Rechazada);
         SolicitudRecoleccionEntity saved = solicitudRepository.save(solicitud);
 
-        // Notificar al usuario con template Thymeleaf (capturamos cualquier error de email/template)
+        // Notificar al usuario con template Thymeleaf (capturamos cualquier error de
+        // email/template)
         UsuarioEntity usuarioSolicitante = saved.getUsuario();
         try {
             Context context = new Context();
@@ -270,7 +266,8 @@ entity.setLongitude(dto.getLongitude());
             context.setVariable("descripcion", saved.getDescripcion());
             context.setVariable("localidad", saved.getLocalidad());
             context.setVariable("ubicacion", saved.getUbicacion());
-            context.setVariable("fechaProgramada", saved.getFechaProgramada() != null ? saved.getFechaProgramada().toString() : "N/A");
+            context.setVariable("fechaProgramada",
+                    saved.getFechaProgramada() != null ? saved.getFechaProgramada().toString() : "N/A");
 
             String contenidoHtml = templateEngine.process("email-rechazaSolicitud", context);
 
@@ -305,7 +302,7 @@ entity.setLongitude(dto.getLongitude());
         solicitud.setLocalidad(dto.getLocalidad());
         solicitud.setUbicacion(dto.getUbicacion());
         solicitud.setLatitude(dto.getLatitude());
-solicitud.setLongitude(dto.getLongitude());
+        solicitud.setLongitude(dto.getLongitude());
 
         solicitud.setEvidencia(dto.getEvidencia());
         solicitud.setFechaProgramada(dto.getFechaProgramada());
@@ -344,9 +341,12 @@ solicitud.setLongitude(dto.getLongitude());
 
         return dtos.stream().filter(dto -> {
             LocalDateTime fecha = dto.getFechaProgramada();
-            if (fecha == null) return false;
-            if (fechaInicio != null && fecha.isBefore(fechaInicio)) return false;
-            if (fechaFin != null && fecha.isAfter(fechaFin)) return false;
+            if (fecha == null)
+                return false;
+            if (fechaInicio != null && fecha.isBefore(fechaInicio))
+                return false;
+            if (fechaFin != null && fecha.isAfter(fechaFin))
+                return false;
             return true;
         }).collect(Collectors.toList());
     }
@@ -408,7 +408,7 @@ solicitud.setLongitude(dto.getLongitude());
         for (SolicitudRecoleccionDTO s : solicitudes) {
             Row row = sheet.createRow(rowNum++);
             // Uso de Optional.ofNullable para manejar nulls de forma segura
-            row.createCell(0).setCellValue(Optional.ofNullable(s.getIdSolicitud()).orElse(0L).doubleValue());
+            row.createCell(0).setCellValue(Optional.ofNullable(s.getIdSolicitud()).map(String::valueOf).orElse(""));
             row.createCell(1).setCellValue(Optional.ofNullable(s.getUsuarioId()).orElse(0L).doubleValue());
             row.createCell(2).setCellValue(Optional.ofNullable(s.getAceptadaPorId()).orElse(0L).doubleValue());
             row.createCell(3).setCellValue(Optional.ofNullable(s.getTipoResiduo()).map(Enum::name).orElse(""));

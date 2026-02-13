@@ -6,5 +6,6 @@ public enum EstadoRecoleccion {
     Completada,
     Fallida,
     Cancelada
+
     
 }
