@@ -55,9 +55,6 @@ private EstadoRecoleccion estado = EstadoRecoleccion.Pendiente;
     @Column(name = "fecha_creacion_recoleccion", nullable = false, updatable = false)
     private OffsetDateTime fechaCreacionRecoleccion;
 
-    public Object getId() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getId'");
-    }
+  
 }
 
