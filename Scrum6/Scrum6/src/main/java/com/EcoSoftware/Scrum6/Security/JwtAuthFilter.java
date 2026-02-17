@@ -55,9 +55,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         System.out.println("Authorization Header: " + authHeader);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            System.out.println("No token found or invalid format");
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("Token required");
+            System.out.println("No token found or invalid format - continuing chain");
+            filterChain.doFilter(request, response);
             return;
         }
 

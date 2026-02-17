@@ -1,19 +1,33 @@
 package com.EcoSoftware.Scrum6.Controller;
 
-import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
-import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
-import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
-import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.CapacitacionDTO;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.InscripcionDTO;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.ModuloDTO;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.ProgresoDTO;
+import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.UploadResultDTO;
+import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
+import com.EcoSoftware.Scrum6.Exception.ValidacionCapacitacionException;
+import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
 
 @RestController
 @RequestMapping("/api/capacitaciones")

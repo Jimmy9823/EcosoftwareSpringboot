@@ -4,6 +4,7 @@ import com.EcoSoftware.Scrum6.Security.JwtAuthFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -43,6 +44,8 @@ public class SecurityConfig {
                                 "/api/personas/test-registro",
                                 "/error"
                         ).permitAll()
+                            .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
+                            .requestMatchers("/api/puntos/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
