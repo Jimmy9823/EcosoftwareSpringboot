@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
@@ -30,8 +33,8 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping("/api/solicitudes")
 public class SolicitudRecoleccionController {
 
-    // Servicio de solicitudes
-    private final SolicitudRecoleccionService solicitudService;
+    @Autowired
+    private SolicitudRecoleccionService solicitudService;
 
     public SolicitudRecoleccionController(SolicitudRecoleccionService solicitudService) {
         this.solicitudService = solicitudService;
@@ -47,6 +50,21 @@ public class SolicitudRecoleccionController {
         String correoUsuario = auth.getName();
 
         return ResponseEntity.ok(solicitudService.crearSolicitudConUsuario(dto, correoUsuario));
+    }
+
+    // ========================================================
+    // Subir Evidencia
+    // ========================================================
+    @PostMapping(value = "/{id}/evidencia", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> subirEvidencia(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file) {
+
+        try {
+            return ResponseEntity.ok(solicitudService.subirEvidencia(file, id));
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body("Error al subir la evidencia");
+        }
     }
 
     // ========================================================

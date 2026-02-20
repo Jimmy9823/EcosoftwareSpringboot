@@ -19,6 +19,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 import org.thymeleaf.TemplateEngine;
 import org.thymeleaf.context.Context;
 
@@ -30,6 +31,7 @@ import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import com.EcoSoftware.Scrum6.Enums.Localidad;
 import com.EcoSoftware.Scrum6.Repository.SolicitudRecoleccionRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
+import com.EcoSoftware.Scrum6.Service.CloudinaryService;
 import com.EcoSoftware.Scrum6.Service.EmailService;
 import com.EcoSoftware.Scrum6.Service.SolicitudRecoleccionService;
 import com.itextpdf.text.BaseColor;
@@ -77,6 +79,9 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
 
     @Autowired
     private TemplateEngine templateEngine;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     private static final Logger logger = LoggerFactory.getLogger(SolicitudRecoleccionServiceImpl.class);
 
@@ -165,6 +170,37 @@ public class SolicitudRecoleccionServiceImpl implements SolicitudRecoleccionServ
         // 5. Devolver DTO
         return entityToDTO(saved);
     }
+
+
+    @Override
+public String subirEvidencia(MultipartFile file, Long idSolicitud) throws IOException {
+
+    if (file == null || file.isEmpty()) {
+        throw new RuntimeException("Imagen no enviada");
+    }
+
+    // Validar tipo de archivo (solo imágenes)
+    if (!file.getContentType().startsWith("image/")) {
+        throw new RuntimeException("Solo se permiten imágenes");
+    }
+
+    // valida solicitud existe
+    SolicitudRecoleccionEntity solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+    //Folder y publicId para organizar en Cloudinary
+    String folder = "solicitudes/" + idSolicitud;
+    String publicId = "evidencia_" + System.currentTimeMillis();
+
+    // Subir a Cloudinary y obtener URL
+    String url = cloudinaryService.upload(file, folder, publicId);
+
+    // Guardar URL en la solicitud
+    solicitud.setEvidencia(url);
+    solicitudRepository.save(solicitud);
+
+    return url;
+}
 
     @Override
     public SolicitudRecoleccionDTO obtenerPorId(Long id) {

@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.CapacitacionDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.InscripcionDTO;
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.ModuloDTO;
@@ -41,6 +40,19 @@ public class CapacitacionesController {
     public ResponseEntity<CapacitacionDTO> crearCapacitacion(@RequestBody CapacitacionDTO dto) {
         return ResponseEntity.ok(capacitacionesService.crearCapacitacion(dto));
     }
+
+    @PostMapping(value = "/{id}/imagen", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+public ResponseEntity<?> subirImagen(
+        @PathVariable Long id,
+        @RequestParam("file") MultipartFile file) {
+
+    try {
+        String url = capacitacionesService.subirImagen(file, id);
+        return ResponseEntity.ok(Map.of("url", url));
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(e.getMessage());
+    }
+}
 
     @PutMapping("/{id}")
     public ResponseEntity<CapacitacionDTO> actualizarCapacitacion(@PathVariable Long id,
