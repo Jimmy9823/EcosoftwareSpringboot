@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 public class Scrum6Application {
 
+
 	public static void main(String[] args) {
 		SpringApplication.run(Scrum6Application.class, args);
 	}
