@@ -63,7 +63,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private TemplateEngine templateEngine;
 
     @Autowired
-private CloudinaryService cloudinaryService;
+    private CloudinaryService cloudinaryService;
 
     @Override
     public List<UsuarioDTO> listarUsuarios() {
@@ -142,83 +142,79 @@ private CloudinaryService cloudinaryService;
 
         usuarioRepository.save(usuario);
 
-        //Enviar correo de aprobación
-        
+        // Enviar correo de aprobación
+
     }
 
-    //elimición de registro
+    // elimición de registro
     @Override
-public void rechazarUsuario(Long idUsuario) {
-    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public void rechazarUsuario(Long idUsuario) {
+        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    // Solo se deberían rechazar usuarios pendientes
-    if (usuario.getEstado() != null && usuario.getEstado()) {
-        throw new RuntimeException("No se puede rechazar un usuario ya activo");
+        // Solo se deberían rechazar usuarios pendientes
+        if (usuario.getEstado() != null && usuario.getEstado()) {
+            throw new RuntimeException("No se puede rechazar un usuario ya activo");
+        }
+
+        usuarioRepository.delete(usuario);
+
+        // enviar correo de rechazo
+
     }
 
-    usuarioRepository.delete(usuario);
-
-    //enviar correo de rechazo
-    
-}
-
-
-
-
-@Override
-public List<UsuarioDTO> listarUsuariosPendientes() {
-    return usuarioRepository.findByEstadoFalse()
-            .stream()
-            .map(this::convertirADTO)
-            .toList();
-}
-
-@Override
-public Long contarUsuariosPendientes() {
-    return usuarioRepository.countByEstadoFalse();
-}
-
-@Override
-public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
-    if (file == null || file.isEmpty()) {
-        throw new RuntimeException("Archivo no enviado");
+    @Override
+    public List<UsuarioDTO> listarUsuariosPendientes() {
+        return usuarioRepository.findByEstadoFalse()
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
     }
 
-    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-    // Folder y publicId
-    String folder = "usuarios/" + idUsuario;
-    String publicId = tipo + "_" + System.currentTimeMillis();
-
-    // Subir a Cloudinary
-    String url = cloudinaryService.upload(file, folder, publicId);
-
-    // Guardar según tipo en la entidad (tu diseño: campos simples en UsuarioEntity)
-    switch (tipo.toUpperCase()) {
-        case "CEDULA":
-            usuario.setDocumento(url); // si usas 'Documento' para cédula
-            break;
-        case "CERTIFICADO":
-            usuario.setCertificaciones(url);
-            break;
-        case "RUT":
-            usuario.setRut(url);
-            break;
-        case "FOTO_PERFIL":
-            usuario.setImagen_perfil(url);
-            break;
-        default:
-            break;
+    @Override
+    public Long contarUsuariosPendientes() {
+        return usuarioRepository.countByEstadoFalse();
     }
 
-    usuario.setFechaActualizacion(LocalDateTime.now());
-    usuarioRepository.save(usuario);
+    @Override
+    public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Archivo no enviado");
+        }
 
-    return url;
-}
+        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
+        // Folder y publicId
+        String folder = "usuarios/" + idUsuario;
+        String publicId = tipo + "_" + System.currentTimeMillis();
+
+        // Subir a Cloudinary
+        String url = cloudinaryService.upload(file, folder, publicId);
+
+        // Guardar según tipo en la entidad (tu diseño: campos simples en UsuarioEntity)
+        switch (tipo.toUpperCase()) {
+            case "CEDULA":
+                usuario.setDocumento(url); // si usas 'Documento' para cédula
+                break;
+            case "CERTIFICADO":
+                usuario.setCertificaciones(url);
+                break;
+            case "RUT":
+                usuario.setRut(url);
+                break;
+            case "FOTO_PERFIL":
+                usuario.setImagen_perfil(url);
+                break;
+            default:
+                break;
+        }
+
+        usuario.setFechaActualizacion(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+
+        return url;
+    }
 
     // ========================================================
     // GENERAR PLANTILLA POR ROL

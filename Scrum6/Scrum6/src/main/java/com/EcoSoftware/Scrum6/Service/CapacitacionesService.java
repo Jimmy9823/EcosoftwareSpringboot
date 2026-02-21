@@ -16,6 +16,8 @@ public interface CapacitacionesService {
     // Capacitacion
     // ===========================
     CapacitacionDTO crearCapacitacion(CapacitacionDTO dto);
+    
+    String subirImagen(MultipartFile file, Long capacitacionId) throws Exception;
 
     CapacitacionDTO actualizarCapacitacion(Long id, CapacitacionDTO dto);
 
@@ -39,6 +41,8 @@ public interface CapacitacionesService {
     // MÓDULOS
     // ===========================
     ModuloDTO crearModulo(ModuloDTO dto);
+
+    //String subirMaterial(ModuloDTO dto, MultipartFile file, String tipoMaterial) throws Exception;
 
     ModuloDTO actualizarModulo(Long id, ModuloDTO dto);
 

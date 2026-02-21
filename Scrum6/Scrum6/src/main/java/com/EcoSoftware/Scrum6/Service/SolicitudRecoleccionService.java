@@ -6,6 +6,8 @@ import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.web.multipart.MultipartFile;
+
 import com.EcoSoftware.Scrum6.DTO.SolicitudRecoleccionDTO;
 import com.EcoSoftware.Scrum6.Enums.EstadoPeticion;
 import com.EcoSoftware.Scrum6.Enums.Localidad;
@@ -19,6 +21,9 @@ public interface SolicitudRecoleccionService {
 
     // Crear una nueva solicitud asociada a un usuario (estado inicial: Pendiente)
     SolicitudRecoleccionDTO crearSolicitudConUsuario(SolicitudRecoleccionDTO dto, String correoUsuario);
+
+    //Subir evidencia de reciclaje
+    String subirEvidencia(MultipartFile file, Long idSolicitud) throws IOException;
 
     // Obtener una solicitud específica por su ID
     SolicitudRecoleccionDTO obtenerPorId(Long id);

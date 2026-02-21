@@ -36,6 +36,7 @@ import com.EcoSoftware.Scrum6.Repository.ModuloRepository;
 import com.EcoSoftware.Scrum6.Repository.ProgresoRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.CapacitacionesService;
+import com.EcoSoftware.Scrum6.Service.CloudinaryService;
 
 @Service
 @Transactional
@@ -61,6 +62,9 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
 
     @Autowired
     private org.thymeleaf.TemplateEngine templateEngine;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
 
     /** Verificar si la capacitacion existe por nombre  o descripcion*/
     @Override
@@ -360,6 +364,33 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
     }
 
     @Override
+public String subirImagen(MultipartFile file, Long capacitacionId) throws Exception {
+
+    CapacitacionEntity cap = capacitacionRepository.findById(capacitacionId)
+            .orElseThrow(() -> new RuntimeException("Capacitación no encontrada"));
+
+    if (file == null || file.isEmpty()) {
+        throw new RuntimeException("Archivo no enviado");
+    }
+
+    if (!file.getContentType().startsWith("image/")) {
+        throw new RuntimeException("Archivo no es una imagen válida");
+    }
+
+    String folder = "capacitaciones/" + capacitacionId;
+
+    
+    String publicId = "imagen_principal";
+
+    String url = cloudinaryService.upload(file, folder, publicId);
+
+    cap.setImagen(url);
+    capacitacionRepository.save(cap);
+
+    return url;
+}
+
+    @Override
     public CapacitacionDTO actualizarCapacitacion(Long id, CapacitacionDTO dto) {
         CapacitacionEntity entidad = capacitacionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Capacitación no encontrada"));
@@ -423,6 +454,8 @@ public class CapacitacionesServiceImpl implements CapacitacionesService {
         dto.setId(saved.getId());
         return dto;
     }
+
+    
 
     @Override
     public ModuloDTO actualizarModulo(Long id, ModuloDTO dto) {
