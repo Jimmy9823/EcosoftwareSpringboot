@@ -2,6 +2,7 @@ package com.EcoSoftware.Scrum6.Implement.DatosPrecargados;
 
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import jakarta.transaction.Transactional;
@@ -35,7 +36,8 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 "1000070000",               // cédula
                 "3070000000",               // teléfono
                 RolEntity.TipoDeRol.Administrador,
-                "Teusaquillo"               // localidad
+                "Teusaquillo",              // localidad
+                EstadoRegistro.APROBADO      // estadoRegistro
         );
 
         crearUsuarioBaseSiNoExiste(
@@ -45,7 +47,8 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 "2000090070",
                 "3000041111",
                 RolEntity.TipoDeRol.Ciudadano,
-                "Ciudad_Bolivar"
+                "Ciudad_Bolivar",              
+                EstadoRegistro.APROBADO      // estadoRegistro
         );
 
         crearUsuarioBaseSiNoExiste(
@@ -55,7 +58,8 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 "30071200000",
                 "3450002222",
                 RolEntity.TipoDeRol.Empresa,
-                "Antonio_Nariño"
+                "Antonio_Nariño",              
+                EstadoRegistro.PENDIENTE_REVISAR     // estadoRegistro
         );
 
         crearUsuarioBaseSiNoExiste(
@@ -65,7 +69,8 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 "400047250000",
                 "3700003333",
                 RolEntity.TipoDeRol.Reciclador,
-                "Bosa"
+                "Bosa",              
+                EstadoRegistro.PENDIENTE_REVISAR     // estadoRegistro
         );
 
         System.out.println(">>> Usuarios base verificados/creados correctamente");
@@ -78,7 +83,8 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
             String cedula,
             String telefono,
             RolEntity.TipoDeRol tipoRol,
-            String localidad
+            String localidad,
+            EstadoRegistro estadoRegistro
     ) {
 
         // Validar si ya existe por correo
@@ -100,6 +106,7 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
         usuario.setCedula(cedula);
         usuario.setTelefono(telefono);
         usuario.setRol(rol);
+        usuario.setEstadoRegistro(estadoRegistro);
 
         usuario.setEstado(true);
         usuario.setDireccion(null);

@@ -1,6 +1,7 @@
 package com.EcoSoftware.Scrum6.Controller;
 
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Security.TokenJWT;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +37,10 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "Correo no registrado o usuario inactivo"));
         }
+        if (usuarioOpt.get().getEstadoRegistro() != EstadoRegistro.APROBADO) {
+    return ResponseEntity.status(HttpStatus.FORBIDDEN)
+            .body(Map.of("error", "Tu cuenta aún no ha sido aprobada por el administrador"));
+}
 
 
         UsuarioEntity usuario = usuarioOpt.get();

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -89,6 +91,10 @@ public class UsuarioEntity {
 
     @Column(nullable = false)
     private LocalDateTime fechaActualizacion;
+
+    @Enumerated(EnumType.STRING)
+@Column(name = "estado_registro")
+private EstadoRegistro estadoRegistro;
 
     // --- EVENTOS AUTOMÁTICOS ---
     @PrePersist

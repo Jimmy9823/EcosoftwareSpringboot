@@ -2,6 +2,8 @@ package com.EcoSoftware.Scrum6.Repository;
 
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
+
 import jakarta.transaction.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -29,9 +31,8 @@ public interface UsuarioRepository extends JpaRepository<UsuarioEntity, Long> {
 
     Optional<UsuarioEntity> findByCorreo(String correo);
 
-    List<UsuarioEntity> findByEstadoFalse();
-
-Long countByEstadoFalse();
+List<UsuarioEntity> findByEstadoRegistro(EstadoRegistro estadoRegistro);
+Long countByEstadoRegistro(EstadoRegistro estadoRegistro);
 
 
     @Modifying

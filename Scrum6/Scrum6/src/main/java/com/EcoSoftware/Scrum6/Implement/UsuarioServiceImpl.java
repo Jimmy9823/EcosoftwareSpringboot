@@ -27,6 +27,7 @@ import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.CloudinaryService;
@@ -99,9 +100,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         // DEFINIR ESTADO SEGÚN ROL
         Long rolId = usuarioDTO.getRolId();
         if (rolId == 1 || rolId == 2) {
-            entity.setEstado(true); // Admin y Ciudadano
+            entity.setEstadoRegistro(EstadoRegistro.APROBADO); // Ciudadano y Administrador se aprueban automáticamente
         } else {
-            entity.setEstado(false); // Empresa y Reciclador
+            entity.setEstadoRegistro(EstadoRegistro.PENDIENTE_DOCUMENTACION); // Reciclador y Empresa deben subir documentos y ser revisados por admin antes de aprobar
         }
 
         // Fechas
@@ -127,94 +128,97 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // aprobación de regsitro
-    @Override
-    public void aprobarUsuario(Long idUsuario) {
-        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+   @Override
+public void aprobarUsuario(Long idUsuario) {
+    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Si ya está activo, no hay que aprobar
-        if (usuario.getEstado() != null && usuario.getEstado()) {
-            throw new RuntimeException("El usuario ya está activo");
-        }
-
-        usuario.setEstado(true);
-        usuario.setFechaActualizacion(LocalDateTime.now());
-
-        usuarioRepository.save(usuario);
-
-        // Enviar correo de aprobación
-
+    if (usuario.getEstadoRegistro() == EstadoRegistro.APROBADO) {
+        throw new RuntimeException("El usuario ya está aprobado");
     }
+
+    usuario.setEstadoRegistro(EstadoRegistro.APROBADO);
+    usuario.setFechaActualizacion(LocalDateTime.now());
+
+    usuarioRepository.save(usuario);
+}
 
     // elimición de registro
     @Override
-    public void rechazarUsuario(Long idUsuario) {
-        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+public void rechazarUsuario(Long idUsuario) {
+    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        // Solo se deberían rechazar usuarios pendientes
-        if (usuario.getEstado() != null && usuario.getEstado()) {
-            throw new RuntimeException("No se puede rechazar un usuario ya activo");
-        }
+    usuario.setEstadoRegistro(EstadoRegistro.RECHAZADO);
+    usuario.setFechaActualizacion(LocalDateTime.now());
 
-        usuarioRepository.delete(usuario);
-
-        // enviar correo de rechazo
-
-    }
+    usuarioRepository.save(usuario);
+}
 
     @Override
-    public List<UsuarioDTO> listarUsuariosPendientes() {
-        return usuarioRepository.findByEstadoFalse()
-                .stream()
-                .map(this::convertirADTO)
-                .toList();
-    }
+public List<UsuarioDTO> listarUsuariosPendientes() {
+    return usuarioRepository
+            .findByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR)
+            .stream()
+            .map(this::convertirADTO)
+            .toList();
+}
 
     @Override
     public Long contarUsuariosPendientes() {
-        return usuarioRepository.countByEstadoFalse();
+        return usuarioRepository.countByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
     }
 
+   
     @Override
-    public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
-        if (file == null || file.isEmpty()) {
-            throw new RuntimeException("Archivo no enviado");
-        }
+public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
 
-        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        // Folder y publicId
-        String folder = "usuarios/" + idUsuario;
-        String publicId = tipo + "_" + System.currentTimeMillis();
-
-        // Subir a Cloudinary
-        String url = cloudinaryService.upload(file, folder, publicId);
-
-        // Guardar según tipo en la entidad (tu diseño: campos simples en UsuarioEntity)
-        switch (tipo.toUpperCase()) {
-            case "CEDULA":
-                usuario.setDocumento(url); // si usas 'Documento' para cédula
-                break;
-            case "CERTIFICADO":
-                usuario.setCertificaciones(url);
-                break;
-            case "RUT":
-                usuario.setRut(url);
-                break;
-            case "FOTO_PERFIL":
-                usuario.setImagen_perfil(url);
-                break;
-            default:
-                break;
-        }
-
-        usuario.setFechaActualizacion(LocalDateTime.now());
-        usuarioRepository.save(usuario);
-
-        return url;
+    if (file == null || file.isEmpty()) {
+        throw new RuntimeException("Archivo no enviado");
     }
+
+    //  Buscar usuario
+    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+    //  Subir archivo a Cloudinary
+    String folder = "usuarios/" + idUsuario;
+    String publicId = tipo + "_" + System.currentTimeMillis();
+
+    String url = cloudinaryService.upload(file, folder, publicId);
+
+    //  Guardar URL según tipo
+    switch (tipo.toUpperCase()) {
+        case "CEDULA":
+            usuario.setDocumento(url);
+            break;
+
+        case "CERTIFICADO":
+            usuario.setCertificaciones(url);
+            break;
+
+        case "RUT":
+            usuario.setRut(url);
+            break;
+
+        case "FOTO_PERFIL":
+            usuario.setImagen_perfil(url);
+            break;
+
+        default:
+            throw new RuntimeException("Tipo de documento no válido");
+    }
+
+    //  Cambiar estado si estaba pendiente de documentación
+    if (usuario.getEstadoRegistro() == EstadoRegistro.PENDIENTE_DOCUMENTACION) {
+        usuario.setEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
+    }
+
+    usuario.setFechaActualizacion(LocalDateTime.now());
+    usuarioRepository.save(usuario);
+
+    return url;
+}
 
     // ========================================================
     // GENERAR PLANTILLA POR ROL

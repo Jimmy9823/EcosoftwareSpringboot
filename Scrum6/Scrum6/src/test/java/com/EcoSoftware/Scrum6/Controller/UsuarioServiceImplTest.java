@@ -5,6 +5,7 @@ import com.EcoSoftware.Scrum6.DTO.UsuarioDTO;
 import com.EcoSoftware.Scrum6.DTO.UsuarioEditarDTO;
 import com.EcoSoftware.Scrum6.Entity.RolEntity;
 import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
 import com.EcoSoftware.Scrum6.Implement.UsuarioServiceImpl;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
@@ -283,8 +284,8 @@ class UsuarioServiceImplTest {
     @Test
     void listarUsuariosPendientes_DebeRetornarSoloInactivos() {
         // ARRANGE
-        usuarioEntity.setEstado(false);
-        when(usuarioRepository.findByEstadoFalse())
+        usuarioEntity.setEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
+        when(usuarioRepository.findByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR))
                 .thenReturn(Arrays.asList(usuarioEntity));
         when(modelMapper.map(usuarioEntity, UsuarioDTO.class))
                 .thenReturn(usuarioDTO);
@@ -301,7 +302,7 @@ class UsuarioServiceImplTest {
     @Test
     void contarUsuariosPendientes_DebeRetornarCantidadCorrecta() {
         // ARRANGE
-        when(usuarioRepository.countByEstadoFalse())
+        when(usuarioRepository.countByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR))
                 .thenReturn(5L);
 
         // ACT

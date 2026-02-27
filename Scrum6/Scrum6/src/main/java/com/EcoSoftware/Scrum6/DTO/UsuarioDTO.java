@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -68,5 +70,7 @@ public class UsuarioDTO {
     private Boolean estado;
 
     private LocalDateTime fechaCreacion;
+
+    private EstadoRegistro estadoRegistro;
 }
 

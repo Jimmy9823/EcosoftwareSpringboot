@@ -171,16 +171,21 @@ public ResponseEntity<String> rechazarUsuario(@PathVariable Long id) {
 }
 
 // Subir documento para un usuario
-@PostMapping(value = "/{id}/documento", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+@PostMapping(value = "/{id}/documentos", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 public ResponseEntity<?> subirDocumento(
         @PathVariable Long id,
         @RequestParam("file") MultipartFile file,
         @RequestParam("tipo") String tipo) {
+
     try {
         String url = usuarioService.subirDocumento(file, id, tipo);
-        return ResponseEntity.ok(Map.of("url", url));
+        return ResponseEntity.ok(Map.of(
+                "mensaje", "Documento subido correctamente",
+                "url", url
+        ));
     } catch (Exception e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of("error", e.getMessage()));
     }
 }
 

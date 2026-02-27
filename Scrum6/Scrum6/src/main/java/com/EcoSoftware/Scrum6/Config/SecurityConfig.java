@@ -42,15 +42,15 @@ public class SecurityConfig {
                                 "/api/personas",
                                 "/api/personas/test-public",
                                 "/api/personas/test-registro",
-                                "/error"
-                        ).permitAll()
-                            .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
-                            .requestMatchers("/api/puntos/**").authenticated()
-                        .anyRequest().authenticated()
-                )
+                                "/error")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/personas/*/documentos").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
+                        .requestMatchers("/api/puntos/**").authenticated()
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                )
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
