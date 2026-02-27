@@ -64,7 +64,7 @@ class AuthControllerTest {
 
         when(usuarioRepository.findByCorreoAndEstadoTrue("test@test.com"))
                 .thenReturn(Optional.of(usuarioMock));
-        when(passwordEncoder.matches("password123", "encodedPassword"))
+        when(passwordEncoder.matches("passwotyrd123", "encodedPassword"))
                 .thenReturn(true);
         when(tokenJWT.generarToken("test@test.com"))
                 .thenReturn("jwt-token-mock");
