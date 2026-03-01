@@ -10,7 +10,17 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+
+import org.springframework.core.annotation.Order;
+
+
+
 @Component
+
+
+@Order(2)
+
+    
 public class CargarUsuariosBasicos implements CommandLineRunner {
 
     private final UsuarioRepository usuarioRepository;
