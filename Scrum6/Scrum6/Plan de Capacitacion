@@ -1,0 +1,249 @@
+
+# DISEÑO, DESARROLLO E IMPLANTACIÓN DEL SISTEMA ECOSOFTWARE – SCRUM6
+
+# PLAN DE CAPACITACIÓN TÉCNICA
+
+---
+
+## GAES ___
+
+### Integrantes
+
+- Jimmy __________________
+- ________________________
+- ________________________
+
+### Instructor Técnico
+
+- ________________________
+
+---
+
+# Control del Documento
+
+## Cláusula de Confidencialidad
+
+La información contenida en este documento es generada en el programa de formación del Tecnólogo en Análisis y Desarrollo de Software. Este documento es de tipo formativo y está orientado a la transferencia de conocimiento técnico del sistema EcoSoftware – Scrum6.
+
+---
+
+## Control de Versiones
+
+| Fecha       | Versión | Revisado por | Cambio / Comentarios |
+|------------|----------|--------------|----------------------|
+| 01/03/2026 | 0.1      | Jimmy        | Creación del documento |
+|            |          |              |                      |
+
+---
+
+## Aprobación del Documento
+
+| Rol            | Nombre | Firma | Fecha |
+|---------------|--------|-------|-------|
+| Desarrollador | Jimmy  |       |       |
+| Instructor    |        |       |       |
+
+---
+
+# Tabla de Contenido
+
+1. Introducción  
+2. Objetivo General  
+3. Planificación de la Capacitación  
+4. Estructura de la Capacitación  
+   - 4.1 Metodología de Capacitación Técnica  
+   - 4.1.1 Roles y Responsabilidades  
+   - 4.1.2 Seguimiento  
+   - 4.1.3 Material de la Capacitación  
+5. Anexos  
+
+---
+
+# 1. INTRODUCCIÓN
+
+El presente Plan de Capacitación Técnica describe la metodología mediante la cual se realizará el proceso de transferencia de conocimiento del sistema **EcoSoftware – Scrum6**.
+
+El sistema está desarrollado bajo arquitectura por capas utilizando Spring Boot para el backend y Angular para el frontend.
+
+EcoSoftware es una plataforma orientada a la gestión integral de reciclaje urbano, permitiendo:
+
+- Gestión de usuarios por roles
+- Solicitudes de recolección
+- Gestión de rutas
+- Capacitaciones ambientales
+- Publicación de noticias
+- Generación de estadísticas
+- Notificaciones en tiempo real
+
+La capacitación busca garantizar que los usuarios técnicos comprendan el funcionamiento, arquitectura y administración del sistema.
+
+---
+
+# 2. OBJETIVO GENERAL
+
+Suministrar la guía que se llevará a cabo en el proceso de transferencia de conocimiento técnico del sistema EcoSoftware – Scrum6, proporcionando toda la información necesaria sobre su funcionamiento, arquitectura y administración.
+
+---
+
+# 3. PLANIFICACIÓN DE LA CAPACITACIÓN
+
+La capacitación se realizará de manera virtual mediante plataforma de reuniones (Google Meet o similar).
+
+## Requisitos para los participantes
+
+- Equipo de cómputo (PC o portátil)
+- Conexión estable a internet
+- IDE instalado (IntelliJ o VS Code)
+- Base de datos MySQL instalada
+- Acceso al repositorio del proyecto
+
+## Metodología
+
+- Exposición técnica guiada
+- Demostración práctica en ambiente de pruebas
+- Taller de instalación y ejecución del sistema
+- Evaluación técnica final
+
+Duración total estimada: **5 horas**
+
+Número estimado de asistentes: **5 personas**
+
+---
+
+# 4. ESTRUCTURA DE LA CAPACITACIÓN
+
+## 4.1 METODOLOGÍA CAPACITACIÓN TÉCNICA
+
+La capacitación se dividirá en los siguientes módulos:
+
+---
+
+## Módulo Administrador
+
+- Introducción general del sistema
+- Gestión de usuarios
+- Gestión de roles
+- Gestión de solicitudes de recolección
+- Gestión de rutas
+- Gestión de capacitaciones
+- Gestión de noticias
+- Visualización de gráficas estadísticas
+- Evaluación
+
+---
+
+## Módulo Residente
+
+- Registro y autenticación
+- Creación de solicitudes de recolección
+- Consulta de estado de solicitudes
+- Inscripción a capacitaciones
+- Consulta de noticias
+- Evaluación
+
+---
+
+## Módulo Técnico (Capacitación Especializada)
+
+- Arquitectura general del sistema
+- Estructura de carpetas Spring Boot
+- Arquitectura por capas (Controller, Service, Repository, Entity)
+- Configuración de seguridad JWT
+- WebSocket para notificaciones en tiempo real
+- Manejo de excepciones globales
+- Administración de base de datos (MySQL)
+- Integración con servicios externos
+- Despliegue del backend
+- Despliegue del frontend
+
+---
+
+# 4.1.1 ROLES Y RESPONSABILIDADES
+
+## Por parte de EcoSoftware
+
+- Verificar conectividad antes de iniciar la sesión
+- Asignar capacitador con dominio técnico
+- Suministrar material digital
+- Resolver dudas técnicas
+- Validar asistencia
+- Aplicar evaluación final
+
+## Por parte de los Participantes
+
+- Conectarse puntualmente
+- Contar con herramientas instaladas previamente
+- Participar activamente
+- Realizar ejercicios prácticos
+- Completar evaluación final
+
+---
+
+# 4.1.2 SEGUIMIENTO
+
+El seguimiento se realizará mediante:
+
+- Evaluación técnica al finalizar la capacitación
+- Revisión de correcta instalación en entorno local
+- Entrega de certificado de asistencia
+- Espacio de retroalimentación técnica
+
+---
+
+# 4.1.3 MATERIAL DE LA CAPACITACIÓN
+
+## 4.1.3.1 Material de Referencia para los Participantes
+
+- Manual técnico del sistema
+- Diagrama de arquitectura
+- Diagrama entidad-relación
+- Guía de instalación
+- Guía de endpoints REST
+
+## 4.1.3.2 Material del Capacitador
+
+- Documentación técnica completa
+- Lista de asistencia
+- Base de datos de pruebas
+- Evaluación final
+- Banco de preguntas frecuentes
+
+## 4.1.3.3 Materiales para Demostraciones y Simulacros
+
+- Ambiente de pruebas local
+- Base de datos precargada
+- Usuarios de prueba
+- Simulación de solicitudes en tiempo real
+
+---
+
+# 4.1.3.4 Agenda de la Capacitación
+
+## Día 1 – Módulo Administrador
+
+- Introducción: 10 min  
+- Gestión de usuarios y roles: 20 min  
+- Gestión de solicitudes y rutas: 20 min  
+- Capacitaciones y noticias: 20 min  
+- Gráficas estadísticas: 15 min  
+- Evaluación: 15 min  
+
+## Día 2 – Capacitación Técnica
+
+- Arquitectura general del sistema: 30 min  
+- Spring Boot y estructura de capas: 30 min  
+- Seguridad JWT y filtros: 30 min  
+- Base de datos y JPA: 30 min  
+- Despliegue y configuración: 30 min  
+
+---
+
+# 5. ANEXOS
+
+- Diagrama de arquitectura por capas
+- Diagrama entidad-relación
+- Capturas del sistema
+- Lista de endpoints REST
+- Manual de instalación
+
+---
