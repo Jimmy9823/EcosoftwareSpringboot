@@ -6,7 +6,16 @@ import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
+
+import org.springframework.core.annotation.Order;
+
+
 @Component
+
+    
+@Order(1)
+
+    
 public class CargarRoles implements CommandLineRunner {
 
     private final RolRepository rolRepository;
