@@ -29,7 +29,8 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private UsuarioRepository usuarioRepository;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         String path = request.getServletPath();
         String method = request.getMethod();
 
@@ -48,7 +49,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-
 
         // Para otras rutas, verificar token
         String authHeader = request.getHeader("Authorization");
@@ -72,10 +72,17 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         String correo = tokenJWT.obtenerCorreoDesdeToken(token);
         var usuario = usuarioRepository.findByCorreoAndEstadoTrue(correo);
 
-        if (usuario.isEmpty()) {
-            System.out.println("Usuario no encontrado: " + correo);
-            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.getWriter().write("User not found");
+        // Permitir subir documentos aunque no esté aprobado
+        boolean esSubidaDocumento = path.matches("/api/personas/\\d+/documentos");
+
+        if (usuario.get().getEstadoRegistro() != com.EcoSoftware.Scrum6.Enums.EstadoRegistro.APROBADO
+                && !esSubidaDocumento) {
+
+            System.out.println("Usuario no aprobado: " + correo);
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setCharacterEncoding("UTF-8");
+            response.setContentType("application/json");
+            response.getWriter().write("{\"error\": \"Tu cuenta aún no ha sido aprobada\"}");
             return;
         }
 
@@ -86,11 +93,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         User userDetails = new User(
                 usuario.get().getCorreo(),
                 usuario.get().getContrasena(),
-                Collections.singletonList(authority)
-        );
+                Collections.singletonList(authority));
 
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null,
+                userDetails.getAuthorities());
         authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         SecurityContextHolder.getContext().setAuthentication(authToken);
 
@@ -98,4 +104,3 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

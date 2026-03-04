@@ -102,7 +102,9 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (rolId == 1 || rolId == 2) {
             entity.setEstadoRegistro(EstadoRegistro.APROBADO); // Ciudadano y Administrador se aprueban automáticamente
         } else {
-            entity.setEstadoRegistro(EstadoRegistro.PENDIENTE_DOCUMENTACION); // Reciclador y Empresa deben subir documentos y ser revisados por admin antes de aprobar
+            entity.setEstadoRegistro(EstadoRegistro.PENDIENTE_DOCUMENTACION); // Reciclador y Empresa deben subir
+                                                                              // documentos y ser revisados por admin
+                                                                              // antes de aprobar
         }
 
         // Fechas
@@ -128,48 +130,48 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // aprobación de regsitro
-   @Override
-public void aprobarUsuario(Long idUsuario) {
-    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    @Override
+    public void aprobarUsuario(Long idUsuario) {
+        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    if (usuario.getEstadoRegistro() == EstadoRegistro.APROBADO) {
-        throw new RuntimeException("El usuario ya está aprobado");
+        if (usuario.getEstadoRegistro() == EstadoRegistro.APROBADO) {
+            throw new RuntimeException("El usuario ya está aprobado");
+        }
+
+        usuario.setEstadoRegistro(EstadoRegistro.APROBADO);
+        usuario.setFechaActualizacion(LocalDateTime.now());
+
+        usuarioRepository.save(usuario);
     }
-
-    usuario.setEstadoRegistro(EstadoRegistro.APROBADO);
-    usuario.setFechaActualizacion(LocalDateTime.now());
-
-    usuarioRepository.save(usuario);
-}
 
     // elimición de registro
     @Override
-public void rechazarUsuario(Long idUsuario) {
-    UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+    public void rechazarUsuario(Long idUsuario) {
+        UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    usuario.setEstadoRegistro(EstadoRegistro.RECHAZADO);
-    usuario.setFechaActualizacion(LocalDateTime.now());
+        usuario.setEstadoRegistro(EstadoRegistro.RECHAZADO);
+        usuario.setFechaActualizacion(LocalDateTime.now());
 
-    usuarioRepository.save(usuario);
-}
+        usuarioRepository.save(usuario);
+    }
 
     @Override
-public List<UsuarioDTO> listarUsuariosPendientes() {
-    return usuarioRepository
-            .findByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR)
-            .stream()
-            .map(this::convertirADTO)
-            .toList();
-}
+    public List<UsuarioDTO> listarUsuariosPendientes() {
+        return usuarioRepository
+                .findByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR)
+                .stream()
+                .map(this::convertirADTO)
+                .toList();
+    }
 
     @Override
     public Long contarUsuariosPendientes() {
         return usuarioRepository.countByEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
     }
 
-   
+
     @Override
 public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) throws IOException {
 
@@ -177,18 +179,16 @@ public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) th
         throw new RuntimeException("Archivo no enviado");
     }
 
-    //  Buscar usuario
     UsuarioEntity usuario = usuarioRepository.findById(idUsuario)
             .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-    //  Subir archivo a Cloudinary
     String folder = "usuarios/" + idUsuario;
     String publicId = tipo + "_" + System.currentTimeMillis();
 
     String url = cloudinaryService.upload(file, folder, publicId);
 
-    //  Guardar URL según tipo
     switch (tipo.toUpperCase()) {
+
         case "CEDULA":
             usuario.setDocumento(url);
             break;
@@ -201,6 +201,10 @@ public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) th
             usuario.setRut(url);
             break;
 
+        case "CAMARA":
+            usuario.setCamara_comercio(url);
+            break;
+
         case "FOTO_PERFIL":
             usuario.setImagen_perfil(url);
             break;
@@ -209,10 +213,7 @@ public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) th
             throw new RuntimeException("Tipo de documento no válido");
     }
 
-    //  Cambiar estado si estaba pendiente de documentación
-    if (usuario.getEstadoRegistro() == EstadoRegistro.PENDIENTE_DOCUMENTACION) {
-        usuario.setEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
-    }
+    validarEstadoDocumentacion(usuario);
 
     usuario.setFechaActualizacion(LocalDateTime.now());
     usuarioRepository.save(usuario);
@@ -220,6 +221,33 @@ public String subirDocumento(MultipartFile file, Long idUsuario, String tipo) th
     return url;
 }
 
+private void validarEstadoDocumentacion(UsuarioEntity usuario) {
+
+    String rol = usuario.getRol().getTipo().name();
+
+    boolean documentosCompletos = false;
+
+    if (rol.equals("Empresa")) {
+
+        documentosCompletos =
+                usuario.getDocumento() != null &&
+                usuario.getRut() != null &&
+                usuario.getCamara_comercio() != null;
+
+    } else if (rol.equals("Reciclador")) {
+
+        documentosCompletos =
+                usuario.getDocumento() != null;
+    }
+
+    if (documentosCompletos) {
+        usuario.setEstadoRegistro(EstadoRegistro.PENDIENTE_REVISAR);
+    } else {
+        usuario.setEstadoRegistro(EstadoRegistro.PENDIENTE_DOCUMENTACION);
+    }
+}
+
+   
     // ========================================================
     // GENERAR PLANTILLA POR ROL
     // ========================================================

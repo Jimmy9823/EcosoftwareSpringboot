@@ -26,40 +26,41 @@ public class AuthController {
     @Autowired
     private TokenJWT tokenJWT;
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
-        String correo = request.get("correo");
-        String contrasena = request.get("contrasena");
+   @PostMapping("/login")
+public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
 
-        Optional<UsuarioEntity> usuarioOpt = usuarioRepository.findByCorreoAndEstadoTrue(correo);
+    String correo = request.get("correo");
+    String contrasena = request.get("contrasena");
 
-        if (usuarioOpt.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Correo no registrado o usuario inactivo"));
-        }
-        if (usuarioOpt.get().getEstadoRegistro() != EstadoRegistro.APROBADO) {
-    return ResponseEntity.status(HttpStatus.FORBIDDEN)
-            .body(Map.of("error", "Tu cuenta aún no ha sido aprobada por el administrador"));
-}
+    Optional<UsuarioEntity> usuarioOpt =
+            usuarioRepository.findByCorreoAndEstadoTrue(correo);
 
-
-        UsuarioEntity usuario = usuarioOpt.get();
-
-        if (!passwordEncoder.matches(contrasena, usuario.getContrasena())) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "Contraseña incorrecta"));
-        }
-
-        String token = tokenJWT.generarToken(usuario.getCorreo());
-
-        Map<String, Object> response = new HashMap<>();
-        response.put("mensaje", "Inicio de sesión exitoso");
-        response.put("token", token);
-        response.put("correo", usuario.getCorreo());
-        response.put("rol", usuario.getRol().getNombre());
-        response.put("idUsuario", usuario.getIdUsuario());
-
-        return ResponseEntity.ok(response);
+    if (usuarioOpt.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Correo no registrado o usuario inactivo"));
     }
-}
 
+    UsuarioEntity usuario = usuarioOpt.get();
+
+    if (usuario.getEstadoRegistro() == EstadoRegistro.RECHAZADO) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(Map.of("error", "Tu registro fue rechazado por el administrador"));
+    }
+
+    if (!passwordEncoder.matches(contrasena, usuario.getContrasena())) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(Map.of("error", "Contraseña incorrecta"));
+    }
+
+    String token = tokenJWT.generarToken(usuario.getCorreo());
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("mensaje", "Inicio de sesión exitoso");
+    response.put("token", token);
+    response.put("correo", usuario.getCorreo());
+    response.put("rol", usuario.getRol().getNombre());
+    response.put("idUsuario", usuario.getIdUsuario());
+    response.put("estadoRegistro", usuario.getEstadoRegistro());
+
+    return ResponseEntity.ok(response);
+}}

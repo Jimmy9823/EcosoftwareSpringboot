@@ -56,6 +56,8 @@ public class UsuarioEntity {
 
     @Column(columnDefinition = "TEXT")
     private String Rut; // Documento RUT de empresa
+    @Column(columnDefinition = "TEXT")
+private String camara_comercio;
 
     // --- RECICLADORES / EMPRESAS ---
     @Column

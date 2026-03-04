@@ -67,6 +67,8 @@ public class UsuarioDTO {
 
     private String Documento;
 
+    private String camaraComercio;
+
     private Boolean estado;
 
     private LocalDateTime fechaCreacion;
