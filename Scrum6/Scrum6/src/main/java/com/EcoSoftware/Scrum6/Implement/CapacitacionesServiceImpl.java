@@ -437,6 +437,27 @@ public String subirImagen(MultipartFile file, Long capacitacionId) throws Except
         }).collect(Collectors.toList());
     }
 
+@Override
+public List<CapacitacionDTO> obtenerCapacitacionesUsuario(Long usuarioId) {
+
+    return inscripcionRepository
+            .findByUsuario_IdUsuario(usuarioId)
+            .stream()
+            .map(ins -> ins.getCurso())
+            .filter(curso -> curso != null) // 👈 evita null
+            .map(curso -> {
+                CapacitacionDTO dto = new CapacitacionDTO();
+                dto.setId(curso.getId());
+                dto.setNombre(curso.getNombre());
+                dto.setDescripcion(curso.getDescripcion());
+                dto.setNumeroDeClases(curso.getNumeroDeClases());
+                dto.setDuracion(curso.getDuracion());
+                dto.setImagen(curso.getImagen());
+                return dto;
+            })
+            .collect(Collectors.toList());
+}
+
     // ============================
     // Módulos (sin cambios funcionales)
     // ============================

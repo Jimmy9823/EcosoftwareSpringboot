@@ -113,6 +113,14 @@ public ResponseEntity<?> subirImagen(
                 .body(archivo);
     }
 
+@GetMapping("/mis-capacitaciones/{usuarioId}")
+public ResponseEntity<List<CapacitacionDTO>> obtenerMisCapacitaciones(@PathVariable Long usuarioId) {
+
+    return ResponseEntity.ok(
+            capacitacionesService.obtenerCapacitacionesUsuario(usuarioId)
+    );
+}
+
     // ========== MÓDULOS ==========
     @PostMapping("/modulos")
     public ResponseEntity<ModuloDTO> crearModulo(@RequestBody ModuloDTO dto) {

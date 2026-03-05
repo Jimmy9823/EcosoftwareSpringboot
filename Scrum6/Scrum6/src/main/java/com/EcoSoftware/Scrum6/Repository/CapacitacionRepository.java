@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import com.EcoSoftware.Scrum6.Entity.CapacitacionEntity;
 
@@ -18,5 +20,6 @@ public interface CapacitacionRepository extends JpaRepository<CapacitacionEntity
     boolean existsByDescripcionIgnoreCase(String descripcion);
 
     Optional<CapacitacionesDTO> findByNombre(String nombre);
+
 
 }

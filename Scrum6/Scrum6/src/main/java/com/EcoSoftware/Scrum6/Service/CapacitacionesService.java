@@ -2,9 +2,11 @@ package com.EcoSoftware.Scrum6.Service;
 
 import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.*;
 import com.EcoSoftware.Scrum6.Enums.EstadoCurso;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
-import com.EcoSoftware.Scrum6.DTO.CapacitacionesDTO.UploadResultDTO;
 
 
 /**
@@ -26,6 +28,8 @@ public interface CapacitacionesService {
     CapacitacionDTO obtenerCapacitacionPorId(Long id);
 
     List<CapacitacionDTO> listarTodasCapacitaciones();
+
+    List<CapacitacionDTO> obtenerCapacitacionesUsuario(Long usuarioId);
 
     // ===========================
     // CARGA MASIVA DE CAPACITACIONES

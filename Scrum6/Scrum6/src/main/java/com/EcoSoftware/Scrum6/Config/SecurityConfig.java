@@ -34,21 +34,27 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Configurar autorizaciones
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/auth/**",
-                                "/api/google/**",
-                                "/api/roles/**",
-                                "/api/personas/registro",
-                                "/api/personas",
-                                "/api/personas/test-public",
-                                "/api/personas/test-registro",
-                                "/error")
-                        .permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/personas/*/documentos").permitAll()
+        .requestMatchers(
+                "/api/auth/**",
+                "/api/google/**",
+                "/api/roles/**",
+                "/api/personas/registro",
+                "/api/personas",
+                "/api/personas/test-public",
+                "/api/personas/test-registro",
+                "/error")
+        .permitAll()
 
-                        .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
-                        .requestMatchers("/api/puntos/**").authenticated()
-                        .anyRequest().authenticated())
+        .requestMatchers(HttpMethod.POST, "/api/personas/*/documentos").permitAll()
+
+        // ENDPOINTS PUBLICOS
+        .requestMatchers(HttpMethod.GET, "/api/capacitaciones/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/noticias/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
+
+        // TODO LO DEMÁS REQUIERE TOKEN
+        .anyRequest().authenticated()
+)
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
