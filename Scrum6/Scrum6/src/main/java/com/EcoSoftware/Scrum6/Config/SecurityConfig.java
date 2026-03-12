@@ -51,6 +51,7 @@ public class SecurityConfig {
         .requestMatchers(HttpMethod.GET, "/api/capacitaciones/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/noticias/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/route/**").permitAll()
 
         // TODO LO DEMÁS REQUIERE TOKEN
         .anyRequest().authenticated()
