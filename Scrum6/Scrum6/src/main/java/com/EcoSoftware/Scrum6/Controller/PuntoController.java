@@ -102,6 +102,7 @@ public class PuntoController {
         p.setLatitud(cambios.getLatitud());
         p.setLongitud(cambios.getLongitud());
         p.setUsuarioId(cambios.getUsuarioId());
+        p.setImagen(cambios.getImagen());
         normalizarCamposEntrada(p);
         if (esDuplicado(p.getNombre(), p.getDireccion(), p.getId())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

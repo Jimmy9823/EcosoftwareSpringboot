@@ -1,6 +1,7 @@
 package com.EcoSoftware.Scrum6.Config;
 
-import com.EcoSoftware.Scrum6.Security.JwtAuthFilter;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.util.List;
+import com.EcoSoftware.Scrum6.Security.JwtAuthFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +35,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 // Configurar autorizaciones
                 .authorizeHttpRequests(auth -> auth
+        // ENDPOINTS PÚBLICOS - AUTENTICACIÓN
         .requestMatchers(
                 "/api/auth/**",
                 "/api/google/**",
@@ -45,12 +47,17 @@ public class SecurityConfig {
                 "/error")
         .permitAll()
 
+        // POST para documentos
         .requestMatchers(HttpMethod.POST, "/api/personas/*/documentos").permitAll()
 
-        // ENDPOINTS PUBLICOS
+        // ENDPOINTS PÚBLICOS - LECTURA
         .requestMatchers(HttpMethod.GET, "/api/capacitaciones/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/noticias/**").permitAll()
         .requestMatchers(HttpMethod.GET, "/api/puntos/**").permitAll()
+
+        // ENDPOINTS PÚBLICOS - RUTEO Y GEOLOCALIZACIÓN
+        .requestMatchers(HttpMethod.GET, "/api/route/**").permitAll()
+        .requestMatchers(HttpMethod.GET, "/api/nearest/**").permitAll()
 
         // TODO LO DEMÁS REQUIERE TOKEN
         .anyRequest().authenticated()
@@ -62,22 +69,36 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Configuración CORS más robusta
+    // Configuración CORS correcta: no mezclar allowCredentials(true) con allowedOrigins("*")
     @Bean
-public CorsConfigurationSource corsConfigurationSource() {
-    CorsConfiguration configuration = new CorsConfiguration();
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
 
-    configuration.setAllowedOrigins(List.of("http://localhost:4200"));
-    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-    configuration.setAllowedHeaders(List.of("*"));
-    configuration.setAllowCredentials(true);
-    configuration.setMaxAge(3600L);
+        // Origen específico (no wildcard) porque usamos credenciales
+        configuration.setAllowedOrigins(List.of("http://localhost:4200"));
 
-    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-    source.registerCorsConfiguration("/**", configuration);
+        // Métodos permitidos
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
 
-    return source;
-}
+        // Headers específicos (no wildcard) porque usamos credenciales
+        configuration.setAllowedHeaders(List.of(
+                "Content-Type",
+                "Authorization",
+                "Accept",
+                "X-Requested-With",
+                "X-CSRF-Token"));
+
+        // Permitir credenciales (JWT en headers)
+        configuration.setAllowCredentials(true);
+
+        // Cache de preflight
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        return source;
+    }
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();

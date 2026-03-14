@@ -38,6 +38,8 @@ public class PuntoReciclaje implements Serializable {
 
     private Long usuarioId;
 
+    private String imagen;
+
     public PuntoReciclaje() {}
 
     public Long getId() {
@@ -110,5 +112,13 @@ public class PuntoReciclaje implements Serializable {
 
     public void setUsuarioId(Long usuarioId) {
         this.usuarioId = usuarioId;
+    }
+
+    public String getImagen() {
+        return imagen;
+    }
+
+    public void setImagen(String imagen) {
+        this.imagen = imagen;
     }
 }

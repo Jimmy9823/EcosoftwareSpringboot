@@ -32,6 +32,7 @@ import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
 import com.EcoSoftware.Scrum6.Service.CloudinaryService;
 import com.EcoSoftware.Scrum6.Service.UsuarioService;
+import com.EcoSoftware.Scrum6.Util.PasswordPolicyUtil;
 import com.itextpdf.text.BaseColor;
 import com.itextpdf.text.Document;
 import com.itextpdf.text.DocumentException;
@@ -86,6 +87,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioDTO.getRolId() == null) {
             throw new RuntimeException("El rol es obligatorio");
         }
+
+        PasswordPolicyUtil.validar(usuarioDTO.getContrasena());
 
         UsuarioEntity entity = modelMapper.map(usuarioDTO, UsuarioEntity.class);
 

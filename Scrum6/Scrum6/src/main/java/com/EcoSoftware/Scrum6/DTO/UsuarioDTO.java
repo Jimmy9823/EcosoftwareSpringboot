@@ -3,6 +3,7 @@ package com.EcoSoftware.Scrum6.DTO;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,7 +25,11 @@ public class UsuarioDTO {
     @NotBlank
     private String nombre;
 
-    @NotBlank
+    @NotBlank(message = "La contraseña es obligatoria")
+    @Pattern(
+        regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z\\d]).{8,}$",
+        message = "La contraseña debe tener mínimo 8 caracteres e incluir mayúscula, minúscula, número y un carácter especial"
+    )
     private String contrasena;
 
     @NotBlank

@@ -5,6 +5,7 @@ import com.EcoSoftware.Scrum6.Entity.UsuarioEntity;
 import com.EcoSoftware.Scrum6.Enums.EstadoRegistro;
 import com.EcoSoftware.Scrum6.Repository.RolRepository;
 import com.EcoSoftware.Scrum6.Repository.UsuarioRepository;
+import com.EcoSoftware.Scrum6.Util.PasswordPolicyUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,10 +30,10 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
     @Transactional
     public void run(String... args) {
 
-        crearUsuarioBaseSiNoExiste(
+                crearOActualizarUsuarioBase(
                 "jaiandroaber@gmail.com",   // correo
                 "Administrador",            // nombre
-                "123456",                   // contraseña
+                "Administrador#2026",            // contraseña
                 "1000070000",               // cédula
                 "3070000000",               // teléfono
                 RolEntity.TipoDeRol.Administrador,
@@ -40,10 +41,10 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 EstadoRegistro.APROBADO      // estadoRegistro
         );
 
-        crearUsuarioBaseSiNoExiste(
+        crearOActualizarUsuarioBase(
                 "paula06sepulveda@gmail.com",
                 "Ciudadano",
-                "123456",
+                "Ciudadano#2026",
                 "2000090070",
                 "3000041111",
                 RolEntity.TipoDeRol.Ciudadano,
@@ -51,10 +52,10 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 EstadoRegistro.APROBADO      // estadoRegistro
         );
 
-        crearUsuarioBaseSiNoExiste(
+        crearOActualizarUsuarioBase(
                 "danacastro2014@gmail.com",
                 "Empresa",
-                "123456",
+                "Empresa#2026",
                 "30071200000",
                 "3450002222",
                 RolEntity.TipoDeRol.Empresa,
@@ -62,10 +63,10 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
                 EstadoRegistro.PENDIENTE_REVISAR     // estadoRegistro
         );
 
-        crearUsuarioBaseSiNoExiste(
+        crearOActualizarUsuarioBase(
                 "ecosoftware2025@gmail.com",
                 "Reciclador",
-                "123456",
+                "Recicla#2026",
                 "400047250000",
                 "3700003333",
                 RolEntity.TipoDeRol.Reciclador,
@@ -76,7 +77,7 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
         System.out.println(">>> Usuarios base verificados/creados correctamente");
     }
 
-    private void crearUsuarioBaseSiNoExiste(
+        private void crearOActualizarUsuarioBase(
             String correo,
             String nombre,
             String contrasenaPlano,
@@ -87,10 +88,16 @@ public class CargarUsuariosBasicos implements CommandLineRunner {
             EstadoRegistro estadoRegistro
     ) {
 
-        // Validar si ya existe por correo
-        if (usuarioRepository.findByCorreoIgnoreCase(correo).isPresent() ||
-                usuarioRepository.findByCedulaAndEstadoTrue(cedula).isPresent()) {
-            System.out.println("Usuario ya registrado en la BD");
+        PasswordPolicyUtil.validar(contrasenaPlano);
+
+        UsuarioEntity usuarioExistente = usuarioRepository.findByCorreoIgnoreCase(correo)
+                .or(() -> usuarioRepository.findByCedulaAndEstadoTrue(cedula))
+                .orElse(null);
+
+        if (usuarioExistente != null) {
+            usuarioExistente.setContrasena(passwordEncoder.encode(contrasenaPlano));
+            usuarioRepository.save(usuarioExistente);
+            System.out.println(">>> Contraseña actualizada para usuario base: " + correo);
             return;
         }
 
