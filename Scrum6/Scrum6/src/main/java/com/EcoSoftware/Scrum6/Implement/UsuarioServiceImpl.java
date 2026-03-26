@@ -422,12 +422,13 @@ private void validarEstadoDocumentacion(UsuarioEntity usuario) {
         usuarioRepository.delete(usuarioEntity);
     }
 
-    @Override
-    public void eliminacionPorEstado(Long idUsuario) {
-        int filasActualizadas = usuarioRepository.eliminacionLogica(idUsuario);
-        if (filasActualizadas == 0) {
-            throw new RuntimeException("Usuario no encontrado con ID: " + idUsuario);
-        }
+   @Override
+    @Transactional
+    public void eliminacionPorEstado(Long id) {
+        UsuarioEntity usuario = usuarioRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con id: " + id));
+        usuario.setEstado(!usuario.getEstado());
+        usuarioRepository.save(usuario);
     }
 
     @Override
